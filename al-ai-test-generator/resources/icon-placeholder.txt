@@ -1,0 +1,15 @@
+ICON PLACEHOLDER
+
+Für das VS Code Marketplace benötigen Sie ein Icon (128x128 PNG):
+- Speichern als: resources/icon.png
+- Größe: 128x128 pixels
+- Format: PNG
+- Empfohlene Farben: Business Central Blau (#0078D4) oder KI-Theme
+
+Erstellen Sie das Icon mit einem Tool wie:
+- Figma (https://figma.com)
+- Canva (https://canva.com)
+- Adobe Illustrator
+- Online Icon Generators
+
+Vorschlag: AL Logo + KI Symbol (Brain/Chip)

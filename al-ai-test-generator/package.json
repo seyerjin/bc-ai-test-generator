@@ -1,0 +1,159 @@
+{
+  "name": "al-ai-test-generator",
+  "displayName": "AL AI Test Generator with Mutation Testing",
+  "description": "AI-powered test generation for Microsoft Dynamics 365 Business Central AL code with mutation testing framework. Follows official Microsoft test standards.",
+  "version": "2.0.0",
+  "publisher": "seyerjin",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
+  },
+  "license": "MIT",
+  "galleryBanner": {
+    "color": "#0078D4",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/al-ai-test-generator"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/al-ai-test-generator/issues"
+  },
+  "homepage": "https://github.com/yourusername/al-ai-test-generator#readme",
+  "keywords": [
+    "AL",
+    "Business Central",
+    "Dynamics 365",
+    "Testing",
+    "AI",
+    "Test Generation",
+    "Mutation Testing",
+    "Claude",
+    "Anthropic",
+    "TDD",
+    "Quality Assurance"
+  ],
+  "categories": [
+    "Testing",
+    "Programming Languages",
+    "Machine Learning",
+    "Other"
+  ],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:al",
+    "workspaceContains:**/*.al",
+    "onCommand:alTestGenerator.generateTests",
+    "onCommand:alTestGenerator.setApiKey",
+    "onCommand:alTestGenerator.runMutationTests",
+    "onCommand:alTestGenerator.configureMutationTesting"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "alTestGenerator.generateTests",
+        "title": "AL: Generate Tests with AI",
+        "category": "AL Testing"
+      },
+      {
+        "command": "alTestGenerator.setApiKey",
+        "title": "AL: Set Anthropic API Key",
+        "category": "AL Testing"
+      },
+      {
+        "command": "alTestGenerator.runMutationTests",
+        "title": "AL: Run Mutation Tests",
+        "category": "AL Testing"
+      },
+      {
+        "command": "alTestGenerator.configureMutationTesting",
+        "title": "AL: Configure Mutation Testing",
+        "category": "AL Testing"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "alTestGenerator.generateTests",
+          "when": "resourceLangId == al",
+          "group": "9_zzz_al@1"
+        },
+        {
+          "command": "alTestGenerator.runMutationTests",
+          "when": "resourceLangId == al",
+          "group": "9_zzz_al@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "alTestGenerator.generateTests",
+          "when": "resourceLangId == al"
+        },
+        {
+          "command": "alTestGenerator.runMutationTests",
+          "when": "resourceLangId == al"
+        },
+        {
+          "command": "alTestGenerator.setApiKey"
+        },
+        {
+          "command": "alTestGenerator.configureMutationTesting"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AL AI Test Generator",
+      "properties": {
+        "alTestGenerator.model": {
+          "type": "string",
+          "default": "claude-sonnet-4-5-20250929",
+          "description": "Claude model to use for test generation (Sonnet 4.5 - latest)"
+        },
+        "alTestGenerator.mutation.enabledOperators": {
+          "type": "array",
+          "default": [
+            "AOR",
+            "ROR",
+            "LCR",
+            "SDL",
+            "RVR",
+            "BVR"
+          ],
+          "description": "Enabled mutation operators"
+        },
+        "alTestGenerator.mutation.timeout": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout per mutant (ms)"
+        },
+        "alTestGenerator.mutation.parallelExecution": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "mutation-test": "node ./out/test/runMutationTests.js",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.17",
+    "@types/vscode": "1.80.0",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3"
+  }
+}

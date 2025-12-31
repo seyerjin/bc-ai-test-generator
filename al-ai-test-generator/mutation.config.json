@@ -1,0 +1,12 @@
+{
+  "enabledOperators": ["AOR", "ROR", "LCR", "SDL", "RVR", "BVR"],
+  "timeout": 30000,
+  "parallelExecution": true,
+  "maxParallelMutants": 5,
+  "stopOnFirstSurvivor": false,
+  "reportFormat": "html",
+  "thresholds": {
+    "mutationScore": 80,
+    "mutationScoreIndicator": 85
+  }
+}

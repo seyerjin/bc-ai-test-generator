@@ -1,0 +1,28 @@
+{
+  "templateUrl": "https://github.com/microsoft/AL-Go",
+  "type": "PTE",
+  "country": "w1",
+  "repoVersion": "2.0",
+  "versioningStrategy": 2,
+  "artifact": "///us/Current",
+  "companyName": "Default Company",
+  "versions": ["latest"],
+  "githubRunner": "windows-latest",
+  "shell": "powershell",
+  "buildModes": [
+    "Default"
+  ],
+  "enableCodeCop": true,
+  "enableUICop": true,
+  "enablePerTenantExtensionCop": true,
+  "enableAppSourceCop": false,
+  "installTestFramework": true,
+  "installTestLibraries": true,
+  "installPerformanceToolkit": false,
+  "doNotRunTests": false,
+  "doNotBuildTests": false,
+  "generateDependencyArtifact": false,
+  "skipVerification": false,
+  "cacheImageName": "",
+  "cacheKeepDays": 3
+}

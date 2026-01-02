@@ -4,7 +4,8 @@
  */
 
 export interface ALObject {
-    type: 'table' | 'page' | 'codeunit' | 'report' | 'query' | 'xmlport' | 'enum';
+    type: 'table' | 'page' | 'codeunit' | 'report' | 'query' | 'xmlport' | 'enum' | 
+          'tableextension' | 'pageextension' | 'reportextension' | 'enumextension';
     id: number;
     name: string;
     procedures: ALProcedure[];
@@ -12,6 +13,7 @@ export interface ALObject {
     variables: ALVariable[];
     fields?: ALField[];
     dependencies: string[];
+    extendsObject?: string; // Für Extensions: welches Object erweitert wird
 }
 
 export interface ALProcedure {
@@ -44,7 +46,8 @@ export interface ALField {
 }
 
 export class AlParser {
-    private static readonly OBJECT_PATTERN = /(table|page|codeunit|report|query|xmlport|enum)\s+(\d+)\s+"?([^"\n{]+)"?/gi;
+    private static readonly OBJECT_PATTERN = /(table|page|codeunit|report|query|xmlport|enum|tableextension|pageextension|reportextension|enumextension)\s+(\d+)\s+"?([^"\n{]+)"?/gi;
+    private static readonly EXTENDS_PATTERN = /extends\s+"?([^"\n{]+)"?/gi;
     private static readonly PROCEDURE_PATTERN = /(local\s+|internal\s+|protected\s+)?(procedure)\s+(\w+)\s*\((.*?)\)(?:\s*:\s*(\w+))?/gi;
     private static readonly TRIGGER_PATTERN = /trigger\s+(On\w+)\s*\(/gi;
     private static readonly FIELD_PATTERN = /field\s*\(\s*(\d+)\s*;\s*"?([^";]+)"?\s*;\s*(\w+)/gi;
@@ -73,7 +76,17 @@ export class AlParser {
             dependencies: this.extractDependencies(alCode)
         };
 
-        if (result.type === 'table') {
+        // Für Extensions: Extrahiere "extends" Information
+        const isExtension = ['tableextension', 'pageextension', 'reportextension', 'enumextension'].includes(result.type);
+        if (isExtension) {
+            const extendsMatch = AlParser.EXTENDS_PATTERN.exec(alCode);
+            if (extendsMatch) {
+                result.extendsObject = extendsMatch[1].trim();
+            }
+            AlParser.EXTENDS_PATTERN.lastIndex = 0;
+        }
+
+        if (result.type === 'table' || result.type === 'tableextension') {
             result.fields = this.extractFields(alCode);
         }
 

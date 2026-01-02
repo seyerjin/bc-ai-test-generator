@@ -5,19 +5,21 @@ import { TestGenerator } from './generators/testGenerator';
 import { FileHandler } from './handlers/fileHandler';
 import { AlParser } from './services/alParser';
 import { ConfigService } from './services/configService';
+import { IdService } from './services/idService';
 import { MutationTestRunner, MutationTestConfig } from './mutation/mutationRunner';
 import { MutationReportGenerator } from './mutation/reportGenerator';
 import { MutationEngine } from './mutation/mutationEngine';
 
 let outputChannel: vscode.OutputChannel;
 let mutationRunner: MutationTestRunner;
+let testGenerator: TestGenerator;
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('AL AI Test Generator v2.0 (with Mutation Testing) aktiviert');
+    console.log('AL AI Test Generator v2.1 (with Mutation Testing) aktiviert');
     
     outputChannel = vscode.window.createOutputChannel('AL AI Test Generator');
     outputChannel.appendLine('==============================================');
-    outputChannel.appendLine('AL AI Test Generator v2.0 ACTIVATED');
+    outputChannel.appendLine('AL AI Test Generator v2.1 ACTIVATED');
     outputChannel.appendLine('==============================================');
     outputChannel.appendLine('Extension aktiviert mit Mutation Testing Support');
     outputChannel.appendLine('Commands verfügbar:');
@@ -25,6 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
     outputChannel.appendLine('  - AL: Run Mutation Tests');
     outputChannel.appendLine('  - AL: Set Anthropic API Key');
     outputChannel.appendLine('  - AL: Configure Mutation Testing');
+    outputChannel.appendLine('  - AL: Reset Test ID Counter');
     outputChannel.appendLine('==============================================');
     outputChannel.show();
     
@@ -34,7 +37,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const claudeService = new ClaudeService(outputChannel);
     const alParser = new AlParser();
     const fileHandler = new FileHandler(outputChannel);
-    const testGenerator = new TestGenerator(claudeService, alParser, fileHandler, outputChannel);
+    const idService = new IdService(context, outputChannel);
+    testGenerator = new TestGenerator(claudeService, alParser, fileHandler, idService, outputChannel);
     
     mutationRunner = new MutationTestRunner(outputChannel);
     
@@ -42,14 +46,15 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('alTestGenerator.generateTests', generateTestsCommand),
         vscode.commands.registerCommand('alTestGenerator.setApiKey', setApiKeyCommand),
         vscode.commands.registerCommand('alTestGenerator.runMutationTests', runMutationTestsCommand),
-        vscode.commands.registerCommand('alTestGenerator.configureMutationTesting', configureMutationTestingCommand)
+        vscode.commands.registerCommand('alTestGenerator.configureMutationTesting', configureMutationTestingCommand),
+        vscode.commands.registerCommand('alTestGenerator.resetTestId', () => resetTestIdCommand(idService))
     );
     
     outputChannel.appendLine('✅ Alle Commands erfolgreich registriert');
     outputChannel.appendLine('✅ Kontextmenü für AL-Dateien aktiv');
     outputChannel.appendLine('➡️  Rechtsklick auf .al Datei für Optionen');
     
-    vscode.window.showInformationMessage('AL AI Test Generator v2.0 bereit!');
+    vscode.window.showInformationMessage('AL AI Test Generator v2.1 bereit!');
 }
 
 async function generateTestsCommand(uri?: vscode.Uri) {
@@ -89,11 +94,6 @@ async function generateTestsCommand(uri?: vscode.Uri) {
             cancellable: true
         }, async (progress, token) => {
             progress.report({ increment: 0, message: 'Analysiere Code...' });
-            
-            const claudeService = new ClaudeService(outputChannel);
-            const fileHandler = new FileHandler(outputChannel);
-            const alParser = new AlParser();
-            const testGenerator = new TestGenerator(claudeService, alParser, fileHandler, outputChannel);
             
             progress.report({ increment: 30, message: 'Generiere Tests...' });
             
@@ -252,6 +252,24 @@ function getMutationTestConfig(): MutationTestConfig {
         stopOnFirstSurvivor: false,
         enabledOperators: config.get<string[]>('enabledOperators') || ['AOR', 'ROR', 'LCR', 'SDL', 'RVR', 'BVR']
     };
+}
+
+async function resetTestIdCommand(idService: IdService) {
+    try {
+        const result = await vscode.window.showWarningMessage(
+            'Möchten Sie wirklich den Test-ID Counter zurücksetzen? Bei der nächsten Test-Generierung werden Sie nach einer neuen Start-ID gefragt.',
+            'Ja',
+            'Nein'
+        );
+        
+        if (result === 'Ja') {
+            await idService.resetTestId();
+            vscode.window.showInformationMessage('Test-ID Counter wurde zurückgesetzt');
+        }
+    } catch (error) {
+        outputChannel.appendLine(`Fehler beim Zurücksetzen: ${error}`);
+        vscode.window.showErrorMessage('Fehler beim Zurücksetzen des Test-ID Counters');
+    }
 }
 
 export function deactivate() {

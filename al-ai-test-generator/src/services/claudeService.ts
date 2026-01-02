@@ -179,11 +179,74 @@ export class ClaudeService {
         const generateMocks = ConfigService.shouldGenerateMocks();
         const includeNegativeTests = ConfigService.shouldIncludeNegativeTests();
 
+        // Detect if source is an extension type
+        const isExtension = /^(tableextension|pageextension|reportextension|enumextension)\s+\d+/mi.test(sourceCode);
+        const extensionGuidance = isExtension ? `
+
+## EXTENSION OBJECT TESTING
+The source code is an extension object. Follow these guidelines:
+
+### Testing Extensions:
+1. **Test extension procedures/triggers** added to the base object
+2. **Test field additions** (for TableExtensions)
+3. **Test modifications** to base object behavior
+4. **Test integration** with base object
+5. **Use base object records** in test scenarios
+
+### Example for TableExtension:
+\`\`\`al
+[Test]
+procedure TestTableExtension_NewField_ValueStored()
+var
+    Customer: Record Customer; // Use base table
+    ExpectedValue: Text;
+begin
+    // [SCENARIO] New field from extension stores value correctly
+    
+    // [GIVEN] A customer record
+    Initialize();
+    Customer.Init();
+    Customer."No." := 'C' + LibraryRandom.RandText(10);
+    ExpectedValue := 'Extension Value';
+    
+    // [WHEN] Setting extended field value
+    Customer."Custom Field" := ExpectedValue; // Field from extension
+    Customer.Insert(true);
+    
+    // [THEN] Value is stored correctly
+    Customer.Get(Customer."No.");
+    LibraryAssert.AreEqual(ExpectedValue, Customer."Custom Field", FieldValueStoredMsg);
+end;
+\`\`\`
+
+### Example for PageExtension:
+\`\`\`al
+[Test]
+procedure TestPageExtension_NewAction_Executes()
+var
+    CustomerCard: TestPage "Customer Card";
+begin
+    // [SCENARIO] New action from extension executes correctly
+    
+    // [GIVEN] Customer card is open
+    Initialize();
+    CustomerCard.OpenEdit();
+    
+    // [WHEN] Invoking extended action
+    CustomerCard."Custom Action".Invoke(); // Action from extension
+    
+    // [THEN] Action completes successfully
+    LibraryAssert.IsTrue(true, ActionExecutedMsg);
+end;
+\`\`\`
+` : '';
+
         return `You are an expert in Microsoft Dynamics 365 Business Central AL development and testing.
 
 ## Task
 Generate a comprehensive test codeunit for the following AL code following Microsoft's official test standards:
 https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/devenv-test-codeunits-and-test-methods
+${extensionGuidance}
 
 ## Source Code to Test:
 \`\`\`al
@@ -201,13 +264,17 @@ codeunit [ID] "[Name] Test"
 {
     Subtype = Test;
     TestPermissions = Disabled;
-    TestIsolation = ${testIsolation};
 
     var
         LibraryAssert: Codeunit "Library - Assert";
         LibraryRandom: Codeunit "Library - Random";
         IsInitialized: Boolean;
 \`\`\`
+
+**IMPORTANT:**
+- Use \`Subtype = Test;\` (capital T, not lowercase)
+- Do NOT include \`TestIsolation\` property
+- Always include TestPermissions = Disabled;
 
 ### 2. MULTILINGUAL LABELS (MANDATORY)
 **All error messages and labels MUST use TextConst with DEU (German) and ENU (English) translations:**
@@ -297,7 +364,6 @@ codeunit 50100 "Customer Validation Test"
 {
     Subtype = Test;
     TestPermissions = Disabled;
-    TestIsolation = Subscriber;
 
     var
         LibraryAssert: Codeunit "Library - Assert";
@@ -500,6 +566,7 @@ Generate the complete test codeunit now with multilingual TextConst labels:`;
     /**
      * Extract AL Code from Claude Response
      * Removes markdown code blocks and extracts pure AL code
+     * Removes any trailing text after the codeunit closing brace
      */
     private extractCodeFromResponse(response: string): string {
         // Remove markdown code blocks
@@ -515,9 +582,56 @@ Generate the complete test codeunit now with multilingual TextConst labels:`;
             throw new Error('Keine gültige Codeunit-Deklaration in Response gefunden');
         }
 
-        // Extract from codeunit start to end
+        // Extract from codeunit start
         const startIndex = code.indexOf(codeunitMatch[0]);
         code = code.substring(startIndex);
+        
+        // Find the last closing brace of the codeunit
+        // Count braces to find the matching closing brace
+        let braceCount = 0;
+        let inString = false;
+        let inComment = false;
+        let lastClosingBraceIndex = -1;
+        
+        for (let i = 0; i < code.length; i++) {
+            const char = code[i];
+            const nextChar = code[i + 1];
+            
+            // Handle comments
+            if (!inString && char === '/' && nextChar === '/') {
+                inComment = true;
+                continue;
+            }
+            if (inComment && char === '\n') {
+                inComment = false;
+                continue;
+            }
+            if (inComment) continue;
+            
+            // Handle strings
+            if (char === "'" && code[i - 1] !== '\\') {
+                inString = !inString;
+                continue;
+            }
+            if (inString) continue;
+            
+            // Count braces
+            if (char === '{') {
+                braceCount++;
+            } else if (char === '}') {
+                braceCount--;
+                if (braceCount === 0) {
+                    // Found the closing brace of the codeunit
+                    lastClosingBraceIndex = i;
+                    break;
+                }
+            }
+        }
+        
+        // Cut off everything after the last closing brace
+        if (lastClosingBraceIndex > 0) {
+            code = code.substring(0, lastClosingBraceIndex + 1);
+        }
         
         return code.trim();
     }

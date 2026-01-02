@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { ConfigService } from '../services/configService';
+import { TestAppSetupService } from '../services/testAppSetupService';
 
 /**
  * FileHandler - Dateioperationen für AL-Tests
@@ -9,30 +10,31 @@ import { ConfigService } from '../services/configService';
  */
 export class FileHandler {
     private outputChannel: vscode.OutputChannel;
+    private testAppSetup: TestAppSetupService;
 
     constructor(outputChannel: vscode.OutputChannel) {
         this.outputChannel = outputChannel;
+        this.testAppSetup = new TestAppSetupService(outputChannel);
     }
 
     /**
      * Get Test File Path for Source File
-     * Follows BC naming conventions: SourceFile.Test.al
+     * Creates test app structure if needed
+     * Places test in test/source/ directory
      */
-    public getTestFilePath(sourceUri: vscode.Uri): vscode.Uri {
+    public async getTestFilePath(sourceUri: vscode.Uri): Promise<vscode.Uri> {
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(sourceUri);
         if (!workspaceFolder) {
             throw new Error('Datei ist nicht Teil eines Workspace');
         }
 
-        const sourceDir = path.dirname(sourceUri.fsPath);
-        const sourceName = path.basename(sourceUri.fsPath, '.al');
-        const outputFolder = ConfigService.getOutputFolder();
+        // Ensure test app structure exists and get test/source/ directory
+        const testSourceDir = await this.testAppSetup.getTestSourceDirectory(workspaceFolder.uri);
         
-        // Test directory: src/Test/
-        const testDir = path.join(sourceDir, outputFolder);
+        const sourceName = path.basename(sourceUri.fsPath, '.al');
         const testFileName = `${sourceName}.Test.al`;
         
-        return vscode.Uri.file(path.join(testDir, testFileName));
+        return vscode.Uri.file(path.join(testSourceDir.fsPath, testFileName));
     }
 
     /**
@@ -69,7 +71,7 @@ export class FileHandler {
      * Check if Test File Already Exists
      */
     public async testFileExists(sourceUri: vscode.Uri): Promise<boolean> {
-        const testUri = this.getTestFilePath(sourceUri);
+        const testUri = await this.getTestFilePath(sourceUri);
         
         try {
             await vscode.workspace.fs.stat(testUri);

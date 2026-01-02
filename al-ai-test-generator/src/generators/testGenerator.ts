@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ClaudeService } from '../services/claudeService';
 import { AlParser, ALObject } from '../services/alParser';
 import { FileHandler } from '../handlers/fileHandler';
+import { IdService } from '../services/idService';
 
 /**
  * TestGenerator - Orchestriert Testgenerierung
@@ -12,6 +13,7 @@ export class TestGenerator {
         private claudeService: ClaudeService,
         private alParser: AlParser,
         private fileHandler: FileHandler,
+        private idService: IdService,
         private outputChannel: vscode.OutputChannel
     ) {}
 
@@ -46,19 +48,14 @@ export class TestGenerator {
                 token
             );
             
-            // 5. Generate test ID
-            const workspaceFolder = vscode.workspace.getWorkspaceFolder(sourceUri);
-            if (!workspaceFolder) {
-                throw new Error('Kein Workspace gefunden');
-            }
-            
-            const testId = await this.fileHandler.getNextTestId(workspaceFolder.uri);
+            // 5. Get next test ID from IdService
+            const testId = await this.idService.getNextTestId();
             
             // 6. Replace placeholder ID
             const finalTestCode = testCode.replace(/codeunit\s+\d+/i, `codeunit ${testId}`);
             
-            // 7. Write test file (FA7)
-            const testUri = this.fileHandler.getTestFilePath(sourceUri);
+            // 7. Write test file (FA7) - creates test app structure if needed
+            const testUri = await this.fileHandler.getTestFilePath(sourceUri);
             await this.fileHandler.writeTestFile(testUri, finalTestCode);
             
             // 8. Open in editor
@@ -99,10 +96,18 @@ export class TestGenerator {
         const parts = [
             `Object Type: ${alObject.type}`,
             `Object ID: ${alObject.id}`,
-            `Object Name: ${alObject.name}`,
+            `Object Name: ${alObject.name}`
+        ];
+
+        // Für Extensions: Zeige welches Object erweitert wird
+        if (alObject.extendsObject) {
+            parts.push(`Extends: ${alObject.extendsObject}`);
+        }
+
+        parts.push(
             `Procedures: ${alObject.procedures.length}`,
             `Triggers: ${alObject.triggers.length}`
-        ];
+        );
 
         if (alObject.procedures.length > 0) {
             parts.push('\nKey Procedures:');
@@ -110,6 +115,13 @@ export class TestGenerator {
                 const params = proc.parameters.map(p => `${p.name}: ${p.type}`).join(', ');
                 const returnType = proc.returnType ? `: ${proc.returnType}` : '';
                 parts.push(`  - ${proc.name}(${params})${returnType}`);
+            });
+        }
+
+        if (alObject.fields && alObject.fields.length > 0) {
+            parts.push('\nFields:');
+            alObject.fields.slice(0, 5).forEach(field => {
+                parts.push(`  - ${field.name}: ${field.type}`);
             });
         }
 

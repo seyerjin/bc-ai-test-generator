@@ -1,418 +1,269 @@
-name: CI/CD with AL-Go and Mutation Testing
+name: CI/CD
 
 on:
   push:
-    branches: [main, dev]
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '.vscode/**'
+      - '.gitignore'
   pull_request:
-    branches: [main, dev]
-    types: [opened, synchronize, reopened]
+    branches: [ main ]
   workflow_dispatch:
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
   actions: read
-  checks: write
   pull-requests: write
-  packages: write
 
 env:
   AL_GO_VERSION: 'latest'
 
 jobs:
-  # Initialize AL-Go
-  initialize:
-    runs-on: ubuntu-latest
+  Initialization:
+    runs-on: [ windows-latest ]
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
-      settings: ${{ steps.settings.outputs.SettingsJson }}
-      projects: ${{ steps.settings.outputs.ProjectsJson }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Read AL-Go Settings
-        id: settings
-        uses: microsoft/AL-Go-Actions/ReadSettings@main
-        with:
-          shell: powershell
-        continue-on-error: true
-
-      - name: Initialize Telemetry
+      - name: Initialize the workflow
         id: init
+        uses: microsoft/AL-Go-Actions/WorkflowInitialize@v4.0
+        with:
+          shell: powershell
+
+  Build:
+    needs: [ Initialization ]
+    runs-on: [ windows-latest ]
+    name: Build
+    outputs:
+      AppsArtifactsName: ${{ steps.calculateArtifactNames.outputs.AppsArtifactsName }}
+      TestAppsArtifactsName: ${{ steps.calculateArtifactNames.outputs.TestAppsArtifactsName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Read settings
+        id: ReadSettings
+        uses: microsoft/AL-Go-Actions/ReadSettings@v4.0
+        with:
+          shell: powershell
+
+      - name: Read secrets
+        uses: microsoft/AL-Go-Actions/ReadSecrets@v4.0
+        with:
+          shell: powershell
+          settingsJson: ${{ env.Settings }}
+          secrets: 'licenseFileUrl,insiderSasToken,KeyVaultCertificatePfxPassword,KeyVaultCertificatePassword,KeyVaultClientId'
+
+      - name: Calculate Artifact Names
+        id: calculateArtifactNames
         run: |
-          echo "telemetryScopeJson={}" >> $GITHUB_OUTPUT
+          $project = "main"
+          $buildMode = "Default"
+          Write-Host "::set-output name=AppsArtifactsName::$project-Apps-$buildMode"
+          Write-Host "::set-output name=TestAppsArtifactsName::$project-TestApps-$buildMode"
+        shell: powershell
 
-  # Build AL Projects (if present)
-  build-al-projects:
-    needs: [initialize]
-    if: hashFiles('.AL-Go/settings.json') != ''
-    runs-on: windows-latest
-    name: Build AL Projects
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Read AL-Go Settings
-        id: settings
-        uses: microsoft/AL-Go-Actions/ReadSettings@main
+      - name: Run pipeline
+        uses: microsoft/AL-Go-Actions/RunPipeline@v4.0
         with:
           shell: powershell
-          get: type,powerPlatformSolutionFolder
+          settingsJson: ${{ env.Settings }}
+          secretsJson: ${{ env.RepoSecrets }}
 
-      - name: Read Secrets
-        id: secrets
-        uses: microsoft/AL-Go-Actions/ReadSecrets@main
+      - name: Publish artifacts - Apps
+        uses: actions/upload-artifact@v3
         with:
-          shell: powershell
-          gitHubSecrets: ${{ toJson(secrets) }}
-        continue-on-error: true
-
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Run AL-Go Build Pipeline
-        uses: microsoft/AL-Go-Actions/RunPipeline@main
-        with:
-          shell: powershell
-          type: 'Build'
-          project: '.'
-
-      - name: Upload AL Build Output
-        uses: actions/upload-artifact@v4
-        with:
-          name: al-build-output
+          name: ${{ steps.calculateArtifactNames.outputs.AppsArtifactsName }}
           path: |
-            .output/
-            .artifacts/
-          retention-days: 1
-        if: always()
-
-  # Build Extension
-  build-extension:
-    needs: [initialize]
-    runs-on: ubuntu-latest
-    name: Build VS Code Extension
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Lint Code
-        run: npm run lint || true
-        continue-on-error: true
-
-      - name: Compile TypeScript
-        run: npm run compile
-
-      - name: Upload Build Output
-        uses: actions/upload-artifact@v4
-        with:
-          name: extension-build
-          path: |
-            out/
-            node_modules/
-          retention-days: 1
-
-  # Run Extension Tests
-  test-extension:
-    needs: [build-extension]
-    runs-on: ubuntu-latest
-    name: Test Extension
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Download Build Output
-        uses: actions/download-artifact@v4
-        with:
-          name: extension-build
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Run Unit Tests
-        run: npm test || true
-        continue-on-error: true
-
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            coverage/
-            test-results/
+            .buildartifacts/Apps/*.app
+          if-no-files-found: ignore
           retention-days: 30
-        if: always()
 
-  # Run Mutation Testing
-  mutation-test:
-    needs: [build-extension, test-extension]
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    name: Mutation Testing
+      - name: Publish artifacts - Test Apps
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.calculateArtifactNames.outputs.TestAppsArtifactsName }}
+          path: |
+            .buildartifacts/TestApps/*.app
+          if-no-files-found: ignore
+          retention-days: 30
+
+  Test:
+    needs: [ Initialization, Build ]
+    runs-on: [ windows-latest ]
+    name: Run Tests
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+      - name: Read settings
+        uses: microsoft/AL-Go-Actions/ReadSettings@v4.0
+        with:
+          shell: powershell
+
+      - name: Read secrets
+        uses: microsoft/AL-Go-Actions/ReadSecrets@v4.0
+        with:
+          shell: powershell
+          settingsJson: ${{ env.Settings }}
+          secrets: 'licenseFileUrl,insiderSasToken'
+
+      - name: Download App Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.Build.outputs.AppsArtifactsName }}
+          path: .artifacts/apps
+
+      - name: Download Test App Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.Build.outputs.TestAppsArtifactsName }}
+          path: .artifacts/testapps
+
+      - name: Run Tests
+        uses: microsoft/AL-Go-Actions/RunTests@v4.0
+        with:
+          shell: powershell
+          settingsJson: ${{ env.Settings }}
+          secretsJson: ${{ env.RepoSecrets }}
+
+      - name: Publish Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: TestResults
+          path: .buildartifacts/TestResults/*.xml
+          if-no-files-found: ignore
+          retention-days: 30
+
+  MutationTest:
+    needs: [ Initialization, Build, Test ]
+    runs-on: [ windows-latest ]
+    name: Run Mutation Tests
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download App Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.Build.outputs.AppsArtifactsName }}
+          path: .artifacts/apps
+
+      - name: Download Test App Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.Build.outputs.TestAppsArtifactsName }}
+          path: .artifacts/testapps
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - name: Download Build Output
-        uses: actions/download-artifact@v4
-        with:
-          name: extension-build
 
       - name: Install Dependencies
         run: npm ci
+        working-directory: .github/mutation-testing
 
       - name: Run Mutation Tests
-        run: npm run mutation-test || true
-        continue-on-error: true
-        timeout-minutes: 30
+        run: npm run mutation-test
+        working-directory: .github/mutation-testing
+        env:
+          MUTATION_CONFIG: ${{ github.workspace }}/mutation.config.json
 
-      - name: Upload Mutation Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: mutation-report
-          path: mutation-report/
-          retention-days: 30
+      - name: Upload Mutation Test Report
+        uses: actions/upload-artifact@v3
         if: always()
+        with:
+          name: MutationTestReport
+          path: .buildartifacts/mutation-report/
+          if-no-files-found: ignore
+          retention-days: 30
 
-      - name: Parse Mutation Score
-        id: parse-score
-        run: |
-          if [ -f "mutation-report/mutation-report.html" ]; then
-            SCORE=$(grep -oP 'Mutation Score: \K[\d.]+' mutation-report/mutation-report.html || echo "N/A")
-            echo "score=$SCORE" >> $GITHUB_OUTPUT
-          else
-            echo "score=N/A" >> $GITHUB_OUTPUT
-          fi
-        continue-on-error: true
-
-      - name: Comment PR with Results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        continue-on-error: true
+      - name: Comment PR with Mutation Score
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
         with:
           script: |
-            const score = '${{ steps.parse-score.outputs.score }}';
-            const comment = `## 🧬 Mutation Testing Results
+            const fs = require('fs');
+            const reportPath = '.buildartifacts/mutation-report/summary.json';
             
-            **Mutation Score:** ${score}%
-            
-            📊 **What is Mutation Testing?**
-            Mutation testing evaluates test quality by introducing small code changes (mutations) and checking if tests catch them.
-            
-            **Quality Grades:**
-            - 90-100%: 🌟 Excellent
-            - 80-89%: ✅ Good
-            - 70-79%: 👍 Acceptable
-            - Below 70%: ⚠️ Needs Improvement
-            
-            📥 **View Detailed Report:**
-            Download the \`mutation-report\` artifact from [workflow run](${context.payload.pull_request.html_url}/checks) to see:
-            - Which mutants survived
-            - Test coverage gaps
-            - Recommendations for improvement
-            
-            🔗 **Learn More:** [Mutation Testing Guide](../blob/main/MUTATION_TESTING_GUIDE.md)`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+            if (fs.existsSync(reportPath)) {
+              const summary = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              const score = summary.mutationScore || 0;
+              const rating = score >= 80 ? '🟢 Excellent' : 
+                            score >= 60 ? '🟡 Good' : 
+                            score >= 40 ? '🟠 Fair' : '🔴 Poor';
+              
+              const comment = `## Mutation Test Results\n\n` +
+                `**Mutation Score:** ${score.toFixed(2)}% ${rating}\n\n` +
+                `- Killed: ${summary.killed || 0}\n` +
+                `- Survived: ${summary.survived || 0}\n` +
+                `- Timeout: ${summary.timeout || 0}\n` +
+                `- Error: ${summary.error || 0}\n\n` +
+                `[View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
 
-  # Security Audit
-  security-audit:
-    needs: [build-extension]
-    runs-on: ubuntu-latest
-    name: Security Audit
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate || true
-        continue-on-error: true
-
-      - name: Save Audit Results
-        run: npm audit --json > npm-audit.json || true
-        continue-on-error: true
-
-      - name: Upload Security Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-audit
-          path: npm-audit.json
-          retention-days: 30
-        if: always()
-
-  # Package Extension
-  package:
-    needs: [build-extension, test-extension, security-audit]
-    runs-on: ubuntu-latest
-    name: Package VSIX
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Download Build Output
-        uses: actions/download-artifact@v4
-        with:
-          name: extension-build
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Create VSIX Package
-        run: npx vsce package
-
-      - name: Get Package Info
-        id: package-info
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          ls -lh *.vsix
-
-      - name: Upload VSIX
-        uses: actions/upload-artifact@v4
-        with:
-          name: vsix-package-${{ steps.package-info.outputs.version }}
-          path: '*.vsix'
-          retention-days: 90
-
-  # Integration Test with AL-Go
-  integration-test:
-    needs: [build-al-projects, package]
-    if: hashFiles('.AL-Go/settings.json') != '' && always()
-    runs-on: windows-latest
-    name: Integration Test (AL + Extension)
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download AL Build
-        uses: actions/download-artifact@v4
-        with:
-          name: al-build-output
-        continue-on-error: true
-
-      - name: Download VSIX
-        uses: actions/download-artifact@v4
-        with:
-          pattern: vsix-package-*
-          merge-multiple: true
-
-      - name: Install Extension
-        shell: powershell
-        run: |
-          $vsix = Get-ChildItem -Filter "*.vsix" | Select-Object -First 1
-          if ($vsix) {
-            Write-Host "Installing extension: $($vsix.Name)"
-            code --install-extension $vsix.FullName
-          }
-        continue-on-error: true
-
-      - name: Run Integration Tests
-        shell: powershell
-        run: |
-          Write-Host "Integration tests would run here"
-          Write-Host "Testing AL code generation with actual BC project"
-        continue-on-error: true
-
-  # Deploy to Marketplace
-  deploy:
-    needs: [package, test-extension, security-audit]
+  Deploy:
+    needs: [ Initialization, Build, Test ]
+    runs-on: [ windows-latest ]
+    name: Deploy
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    name: Deploy to VS Marketplace
-    environment: production
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Download VSIX
-        uses: actions/download-artifact@v4
-        with:
-          pattern: vsix-package-*
-          merge-multiple: true
-
-      - name: Publish to Marketplace
-        run: |
-          if [ -n "$VSCE_PAT" ]; then
-            npx vsce publish --packagePath *.vsix
-          else
-            echo "⚠️ VSCE_PAT not configured, skipping deployment"
-          fi
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        continue-on-error: true
-
-  # Update AL-Go System Files
-  update-al-go:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: windows-latest
-    name: Update AL-Go System Files
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Update AL-Go System Files
-        uses: microsoft/AL-Go-Actions/CheckForUpdates@main
+      - name: Read settings
+        uses: microsoft/AL-Go-Actions/ReadSettings@v4.0
         with:
           shell: powershell
-          parentTelemetryScopeJson: ${{ needs.initialize.outputs.telemetryScopeJson }}
-          templateUrl: 'https://github.com/microsoft/AL-Go'
-        continue-on-error: true
 
-      - name: Commit Changes
-        run: |
-          git config --global user.name "AL-Go Bot"
-          git config --global user.email "al-go@microsoft.com"
-          git add .
-          git commit -m "Update AL-Go system files" || echo "No changes to commit"
-          git push || echo "No changes to push"
-        continue-on-error: true
+      - name: Read secrets
+        uses: microsoft/AL-Go-Actions/ReadSecrets@v4.0
+        with:
+          shell: powershell
+          settingsJson: ${{ env.Settings }}
+          secrets: 'StorageContext'
+
+      - name: Download App Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.Build.outputs.AppsArtifactsName }}
+          path: .artifacts/apps
+
+      - name: Deploy
+        uses: microsoft/AL-Go-Actions/Deploy@v4.0
+        with:
+          shell: powershell
+          settingsJson: ${{ env.Settings }}
+          secretsJson: ${{ env.RepoSecrets }}
+          environmentName: 'Production'
+          artifacts: '.artifacts/apps'
+
+  PostProcess:
+    if: always()
+    runs-on: [ windows-latest ]
+    needs: [ Initialization, Build, Test ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Finalize the workflow
+        id: PostProcess
+        uses: microsoft/AL-Go-Actions/WorkflowPostProcess@v4.0
+        with:
+          shell: powershell
+          telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}

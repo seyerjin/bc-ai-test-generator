@@ -4,43 +4,6 @@
 
 Generate comprehensive, high-quality test codeunits with Claude AI, following official Microsoft test standards. Includes mutation testing framework for test quality assessment and complete CI/CD pipeline templates for AL projects.
 
-> **Academic Project:** This extension was developed as part of a Master's thesis in Cloud Computing at Hochschule Burgenland, exploring AI-assisted test case generation for Business Central.
-
-[![GitHub Release](https://img.shields.io/github/v/release/seyerjin/bc-ai-test-generator)](https://github.com/seyerjin/bc-ai-test-generator/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
-
----
-
-## ✨ Features
-
-### 🤖 AI-Powered Test Generation
-- **Intelligent Test Creation**: Claude AI analyzes your AL code and generates comprehensive test codeunits
-- **Microsoft Standards**: Follows [official BC test standards](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/devenv-test-codeunits-and-test-methods)
-- **Multilingual Labels**: Automatically generates TextConst with DEU (German) and ENU (English) translations
-- **Complete Coverage**: Tests for happy path, validations, error cases, and business logic
-
-### 🧬 Mutation Testing Framework
-- **6 Mutation Operators**: AOR, ROR, LCR, SDL, RVR, BVR
-- **Mutation Score Calculation**: Assess test effectiveness
-- **HTML Reports**: Visual mutation testing results
-- **Parallel Execution**: Fast mutation testing with configurable parallelization
-- **AL-Go Compatible**: Integrates with Microsoft AL-Go CI/CD pipelines
-
-### 🌍 Multilingual Support
-- **Automatic TextConst Generation**: All labels with DEU and ENU translations
-- **Best Practices**: Follows AL naming conventions (Msg, Err, Qst, Cnf)
-- **No Manual Translation Needed**: AI generates both languages simultaneously
-
-### 🔄 CI/CD Pipeline Templates
-- **Complete GitHub Actions workflows** for AL projects
-- **Automated testing** in BC containers
-- **Code coverage analysis** with PR comments
-- **Mutation testing** for test quality gates
-- **Automated deployment** to BC environments
-
----
-
 ## 📦 Installation
 
 ### From GitHub Releases (Recommended)
@@ -216,30 +179,6 @@ See [templates/README.md](templates/README.md) for complete setup guide includin
 - Code coverage thresholds
 - Mutation testing settings
 - Deployment configuration
-
----
-
-## 🎯 Key Benefits
-
-### For Developers
-- ⚡ **Save Time**: Generate tests in seconds, not hours
-- 🎓 **Learn Best Practices**: AI follows Microsoft standards
-- 🌍 **Multilingual Ready**: Automatic DEU/ENU labels
-- 🔍 **Quality Assurance**: Mutation testing validates test effectiveness
-- 🔄 **CI/CD Ready**: Production-ready pipeline templates included
-
-### For Teams
-- 📈 **Consistent Quality**: All tests follow same standards
-- 🤝 **Easy Onboarding**: New developers learn from generated tests
-- 🔄 **CI/CD Integration**: Complete GitHub Actions workflows
-- 📊 **Metrics**: Mutation scores and coverage track test quality
-- 🚀 **Automated Deployment**: Push to main, deploy automatically
-
-### For Researchers
-- 📊 **Data Collection**: Automated metrics for empirical studies
-- 🔬 **Reproducibility**: Complete CI/CD ensures consistent results
-- 📈 **Trend Analysis**: Historical data for quality evolution
-- 🎓 **Academic Use**: Designed for software testing research
 
 ---
 

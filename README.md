@@ -4,8 +4,6 @@
 
 Generate comprehensive, high-quality test codeunits with Claude AI, following official Microsoft test standards. Includes mutation testing framework for test quality assessment and complete CI/CD pipeline templates for AL projects.
 
-> **Academic Project:** This extension was developed as part of a Master's thesis in Cloud Computing at Hochschule Burgenland, exploring AI-assisted test case generation for Business Central.
-
 ## 📦 Installation
 
 ### From GitHub Releases (Recommended)

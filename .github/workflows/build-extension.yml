@@ -139,7 +139,6 @@ jobs:
         id: package
         working-directory: ${{ env.EXTENSION_DIR }}
         run: |
-          # Der Name enthält automatisch "-dev.x", wenn die Version so lautet
           VSIX_NAME="bc-ai-test-generator-${{ steps.version.outputs.version }}.vsix"
           vsce package --out $VSIX_NAME
           echo "vsix-name=$VSIX_NAME" >> $GITHUB_OUTPUT

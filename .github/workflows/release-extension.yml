@@ -84,7 +84,6 @@ jobs:
             ## BC AI Test Generator v${{ steps.version.outputs.version }}
             
             ${{ steps.changelog.outputs.changelog }}
-            
             ### Installation
             Download the `.vsix` file below and install it manually via VS Code.
           files: ${{ steps.package.outputs.vsix-path }}

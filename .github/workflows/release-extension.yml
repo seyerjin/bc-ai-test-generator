@@ -3,7 +3,6 @@ name: 🚀 Publish Release
 on:
   workflow_dispatch:
     inputs:
-      # Optional: Falls du manuell entscheiden willst, ob es ein Prerelease ist
       is_prerelease:
         description: 'Mark as Prerelease'
         required: false

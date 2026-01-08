@@ -1,0 +1,12 @@
+{
+  "country": "de",
+  "type": "PTE",
+  "artifact": "bcinsider",
+  "enableCodeCov": true,
+  "doNotPublishApps": false,
+  "doNotRunTests": false,
+  "testFolders": [
+    "Test"
+  ],
+  "bcContainerHelperVersion": "latest"
+}

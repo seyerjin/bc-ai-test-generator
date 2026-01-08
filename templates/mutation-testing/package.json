@@ -1,0 +1,32 @@
+{
+  "name": "bc-mutation-testing",
+  "version": "1.0.0",
+  "description": "Mutation Testing Setup for Business Central AL Code",
+  "private": true,
+  "scripts": {
+    "mutation-test": "node run-mutation-tests.js",
+    "mutation-test:incremental": "node run-mutation-tests.js --incremental",
+    "mutation-test:dry-run": "node run-mutation-tests.js --dry-run",
+    "generate-report": "node generate-report.js",
+    "clean": "rimraf ../../.buildartifacts/mutation-*"
+  },
+  "keywords": [
+    "mutation-testing",
+    "business-central",
+    "al",
+    "testing"
+  ],
+  "author": "Matthias Seyer",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "fs-extra": "^11.3.3"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.10"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

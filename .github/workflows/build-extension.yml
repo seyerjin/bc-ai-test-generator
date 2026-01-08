@@ -2,9 +2,9 @@ name: Build and Release Extension
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
     tags:
       - 'v*.*.*'
   workflow_dispatch:
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build Extension
     if: >
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))) || 
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/'))) || 
       github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -89,21 +89,27 @@ jobs:
         working-directory: ${{ env.EXTENSION_DIR }}
         run: npm ci
 
-      - name: Auto-Bump Version (Minor)
+      - name: Auto-Bump Version (Main -> Minor)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: ${{ env.EXTENSION_DIR }}
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          
-          # Erhöht Version um 0.1 (minor) in package.json und package-lock.json
-          # --no-git-tag-version verhindert, dass ein Git-Tag erstellt wird (das macht ggf. dein Release Job)
           npm version minor --no-git-tag-version
-          
-          # Commit und Push zurück ins Repo
           git add package.json package-lock.json
-          # [skip ci] ist wichtig, damit keine Endlosschleife entsteht!
           git commit -m "chore: auto-bump version to $(node -p "require('./package.json').version") [skip ci]"
+          git push
+
+      - name: Auto-Bump Version (Dev -> Prerelease)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        working-directory: ${{ env.EXTENSION_DIR }}
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          # preid=dev sorgt für das "-dev" im Namen
+          npm version prerelease --preid=dev --no-git-tag-version
+          git add package.json package-lock.json
+          git commit -m "chore: auto-bump dev version to $(node -p "require('./package.json').version") [skip ci]"
           git push
 
       - name: Determine Version
@@ -111,15 +117,13 @@ jobs:
         working-directory: ${{ env.EXTENSION_DIR }}
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # Bei manuellem Start: Version aus Input nehmen
             npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Bei Tag: Version vom Tag nehmen
             VERSION=${GITHUB_REF#refs/tags/v}
             npm version $VERSION --no-git-tag-version --allow-same-version
           fi
           
-          # Hier wird jetzt die bereits erhöhte Version ausgelesen
+          # Liest die (oben geänderte) Version aus
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Building version: $VERSION"
@@ -131,6 +135,7 @@ jobs:
         id: package
         working-directory: ${{ env.EXTENSION_DIR }}
         run: |
+          # Der Name enthält automatisch "-dev.x", wenn die Version so lautet
           VSIX_NAME="bc-ai-test-generator-${{ steps.version.outputs.version }}.vsix"
           vsce package --out $VSIX_NAME
           echo "vsix-name=$VSIX_NAME" >> $GITHUB_OUTPUT
@@ -155,7 +160,6 @@ jobs:
       - name: Download VSIX
         uses: actions/download-artifact@v4
         with:
-
           name: bc-ai-test-generator-${{ needs.build.outputs.version }}
           path: ./release-artifacts/
 

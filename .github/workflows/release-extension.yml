@@ -1,0 +1,96 @@
+name: 🚀 Publish Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      # Optional: Falls du manuell entscheiden willst, ob es ein Prerelease ist
+      is_prerelease:
+        description: 'Mark as Prerelease'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  NODE_VERSION: '20'
+  EXTENSION_DIR: './al-ai-test-generator'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Package and Release
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.EXTENSION_DIR }}/package-lock.json
+
+      - name: Install Dependencies (Production only)
+        working-directory: ${{ env.EXTENSION_DIR }}
+        run: npm ci
+
+      - name: Read Version
+        id: version
+        working-directory: ${{ env.EXTENSION_DIR }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "🚀 Preparing Release for Version: $VERSION"
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Package Extension
+        id: package
+        working-directory: ${{ env.EXTENSION_DIR }}
+        run: |
+          VSIX_NAME="bc-ai-test-generator-${{ steps.version.outputs.version }}.vsix"
+          vsce package --out $VSIX_NAME
+          echo "vsix-path=./${{ env.EXTENSION_DIR }}/$VSIX_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Packaged: $VSIX_NAME"
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          if [ -f "CHANGELOG.md" ]; then
+            CHANGELOG=$(sed -n '/^## \[${{ steps.version.outputs.version }}\]/,/^## \[/p' CHANGELOG.md | sed '$d')
+          else
+            CHANGELOG=""
+          fi
+          
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="Release version ${{ steps.version.outputs.version }}"
+          fi
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## BC AI Test Generator v${{ steps.version.outputs.version }}
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ### Installation
+            Download the `.vsix` file below and install it manually via VS Code.
+          files: ${{ steps.package.outputs.vsix-path }}
+          draft: false
+          prerelease: ${{ inputs.is_prerelease }}
+          make_latest: true 
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

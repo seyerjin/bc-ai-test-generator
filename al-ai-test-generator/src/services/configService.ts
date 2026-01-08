@@ -101,7 +101,7 @@ export class ConfigService {
      * Get All Configuration as Object
      * @returns Configuration object for logging/debugging
      */
-    public static getAllConfig(): Record<string, any> {
+    public static getAllConfig(): Record<string, unknown> {
         return {
             model: ConfigService.getModel(),
             maxTokens: ConfigService.getMaxTokens(),
@@ -123,7 +123,7 @@ export class ConfigService {
      */
     public static async updateConfig(
         key: string,
-        value: any,
+        value: unknown,
         target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace
     ): Promise<void> {
         await ConfigService.config.update(key, value, target);

@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { MutatedCode, MutationTestResult, MutationEngine } from './mutationEngine';
+import { MutatedCode, MutationTestResult, MutationEngine, MutationScore } from './mutationEngine';
 
 export interface MutationTestConfig {
     testTimeout: number; // milliseconds
@@ -54,7 +54,7 @@ export class MutationTestRunner {
         }
         
         this.outputChannel.appendLine(`\n📊 Generated ${mutants.length} mutants`);
-        this.outputChannel.appendLine(`⚙️  Configuration:`);
+        this.outputChannel.appendLine('⚙️  Configuration:');
         this.outputChannel.appendLine(`   - Timeout: ${config.testTimeout}ms`);
         this.outputChannel.appendLine(`   - Parallel: ${config.parallelExecution}`);
         this.outputChannel.appendLine(`   - Operators: ${config.enabledOperators.join(', ')}\n`);
@@ -134,7 +134,7 @@ export class MutationTestRunner {
             }
             
             const batch = mutants.slice(i, Math.min(i + batchSize, mutants.length));
-            this.outputChannel.appendLine(`\n📦 Processing batch ${Math.floor(i/batchSize) + 1} (${batch.length} mutants)...`);
+            this.outputChannel.appendLine(`\n📦 Processing batch ${Math.floor(i / batchSize) + 1} (${batch.length} mutants)...`);
             
             const batchResults = await Promise.all(
                 batch.map((mutant, idx) => {
@@ -193,7 +193,7 @@ export class MutationTestRunner {
                 };
             }
             
-        } catch (error: any) {
+        } catch (error) { // KORREKTUR: :any entfernt
             const executionTime = Date.now() - startTime;
             
             if (executionTime >= config.testTimeout) {
@@ -205,11 +205,14 @@ export class MutationTestRunner {
                 };
             }
             
+            // Safe error handling without 'any'
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            
             return {
                 mutantId,
                 status: 'error',
                 executionTime,
-                errorMessage: error.message
+                errorMessage
             };
         }
     }
@@ -219,9 +222,9 @@ export class MutationTestRunner {
      * In real implementation: use BC Test Runner API
      */
     private async runTests(
-        mutantFile: vscode.Uri,
-        testFile: vscode.Uri,
-        timeout: number
+        _mutantFile: vscode.Uri, // KORREKTUR: Unterstrich hinzugefügt
+        _testFile: vscode.Uri,   // KORREKTUR: Unterstrich hinzugefügt
+        _timeout: number         // KORREKTUR: Unterstrich hinzugefügt
     ): Promise<boolean> {
         // Simulation: 80% chance mutant is killed
         await this.sleep(Math.random() * 500); // Simulate test execution
@@ -283,12 +286,12 @@ export class MutationTestRunner {
     /**
      * Display final mutation score
      */
-    private displayMutationScore(score: any): void {
+    private displayMutationScore(score: MutationScore): void { // KORREKTUR: Typ von any zu MutationScore geändert
         this.outputChannel.appendLine('\n╔══════════════════════════════════════════╗');
         this.outputChannel.appendLine('║        MUTATION TESTING RESULTS          ║');
         this.outputChannel.appendLine('╚══════════════════════════════════════════╝\n');
         
-        this.outputChannel.appendLine(`📊 Mutation Statistics:`);
+        this.outputChannel.appendLine('📊 Mutation Statistics:');
         this.outputChannel.appendLine(`   Total Mutants:     ${score.totalMutants}`);
         this.outputChannel.appendLine(`   ✓ Killed:          ${score.killedMutants} (${this.percentage(score.killedMutants, score.totalMutants)}%)`);
         this.outputChannel.appendLine(`   ✗ Survived:        ${score.survivedMutants} (${this.percentage(score.survivedMutants, score.totalMutants)}%)`);
@@ -324,7 +327,7 @@ export class MutationTestRunner {
      * Calculate percentage
      */
     private percentage(value: number, total: number): string {
-        if (total === 0) return '0.00';
+        if (total === 0) return '0.00'; // KORREKTUR: Single quotes sichergestellt
         return ((value / total) * 100).toFixed(2);
     }
 

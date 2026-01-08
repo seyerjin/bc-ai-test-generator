@@ -1,8 +1,7 @@
 /**
  * Mutation Testing Framework für AL-Code
  * Implementiert nach Best Practices für Mutation Testing
- * 
- * Mutation Operators:
+ * * Mutation Operators:
  * - AOR (Arithmetic Operator Replacement)
  * - ROR (Relational Operator Replacement)
  * - LCR (Logical Connector Replacement)
@@ -63,7 +62,7 @@ export interface MutationScore {
 export class ArithmeticOperatorMutation implements MutationOperator {
     name = 'AOR';
     description = 'Arithmetic Operator Replacement';
-    category: 'arithmetic' = 'arithmetic';
+    category = 'arithmetic' as const;
 
     private readonly mutations: Map<string, string[]> = new Map([
         ['+', ['-', '*', '/']],
@@ -115,7 +114,7 @@ export class ArithmeticOperatorMutation implements MutationOperator {
 export class RelationalOperatorMutation implements MutationOperator {
     name = 'ROR';
     description = 'Relational Operator Replacement';
-    category: 'relational' = 'relational';
+    category = 'relational' as const;
 
     private readonly mutations: Map<string, string[]> = new Map([
         ['>', ['>=', '<', '<=', '=', '<>']],
@@ -167,7 +166,7 @@ export class RelationalOperatorMutation implements MutationOperator {
 export class LogicalOperatorMutation implements MutationOperator {
     name = 'LCR';
     description = 'Logical Connector Replacement';
-    category: 'logical' = 'logical';
+    category = 'logical' as const;
 
     private readonly mutations: Map<string, string[]> = new Map([
         ['and', ['or']],
@@ -212,7 +211,7 @@ export class LogicalOperatorMutation implements MutationOperator {
 export class StatementDeletionMutation implements MutationOperator {
     name = 'SDL';
     description = 'Statement Deletion';
-    category: 'statement' = 'statement';
+    category = 'statement' as const;
 
     apply(code: string, location: CodeLocation): MutatedCode | null {
         const lines = code.split('\n');
@@ -248,7 +247,7 @@ export class StatementDeletionMutation implements MutationOperator {
 export class ReturnValueMutation implements MutationOperator {
     name = 'RVR';
     description = 'Return Value Replacement';
-    category: 'value' = 'value';
+    category = 'value' as const;
 
     private readonly mutations: Map<string, string[]> = new Map([
         ['true', ['false']],
@@ -298,7 +297,7 @@ export class ReturnValueMutation implements MutationOperator {
 export class BoundaryValueMutation implements MutationOperator {
     name = 'BVR';
     description = 'Boundary Value Replacement';
-    category: 'boundary' = 'boundary';
+    category = 'boundary' as const;
 
     apply(code: string, location: CodeLocation): MutatedCode | null {
         const lines = code.split('\n');

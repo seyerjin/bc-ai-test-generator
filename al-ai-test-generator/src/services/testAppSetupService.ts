@@ -123,66 +123,68 @@ export class TestAppSetupService {
      * Create Test App app.json
      */
     private async createTestAppJson(testAppRoot: vscode.Uri, mainAppInfo: MainAppInfo): Promise<void> {
+        // ESLint-friendly object definition (single quotes, no quotes for keys)
         const testAppJson = {
-            "id": this.generateGuid(),
-            "name": `${mainAppInfo.name} Tests`,
-            "publisher": mainAppInfo.publisher,
-            "version": mainAppInfo.version,
-            "brief": `Test App for ${mainAppInfo.name}`,
-            "description": `Contains test codeunits for ${mainAppInfo.name}`,
-            "privacyStatement": "",
-            "EULA": "",
-            "help": "",
-            "url": "",
-            "logo": "",
-            "dependencies": [
+            id: this.generateGuid(),
+            name: `${mainAppInfo.name} Tests`,
+            publisher: mainAppInfo.publisher,
+            version: mainAppInfo.version,
+            brief: `Test App for ${mainAppInfo.name}`,
+            description: `Contains test codeunits for ${mainAppInfo.name}`,
+            privacyStatement: '',
+            EULA: '',
+            help: '',
+            url: '',
+            logo: '',
+            dependencies: [
                 {
-                    "id": mainAppInfo.id,
-                    "publisher": mainAppInfo.publisher,
-                    "name": mainAppInfo.name,
-                    "version": mainAppInfo.version
+                    id: mainAppInfo.id,
+                    publisher: mainAppInfo.publisher,
+                    name: mainAppInfo.name,
+                    version: mainAppInfo.version
                 },
                 {
-                    "id": "23de40a6-dfe8-4f80-80db-d70f83ce8caf",
-                    "publisher": "Microsoft",
-                    "name": "Test Runner",
-                    "version": "22.0.0.0"
+                    id: '23de40a6-dfe8-4f80-80db-d70f83ce8caf',
+                    publisher: 'Microsoft',
+                    name: 'Test Runner',
+                    version: '27.0.0.0'
                 },
                 {
-                    "id": "dd0be2ea-f733-4d65-bb34-a28f4624fb14",
-                    "publisher": "Microsoft",
-                    "name": "Library Assert",
-                    "version": "22.0.0.0"
+                    id: 'dd0be2ea-f733-4d65-bb34-a28f4624fb14',
+                    publisher: 'Microsoft',
+                    name: 'Library Assert',
+                    version: '27.0.0.0'
                 },
                 {
-                    "id": "9856ae4f-d1a7-46ef-89bb-6ef056398228",
-                    "publisher": "Microsoft",
-                    "name": "Any",
-                    "version": "22.0.0.0"
+                    id: '9856ae4f-d1a7-46ef-89bb-6ef056398228',
+                    publisher: 'Microsoft',
+                    name: 'Any',
+                    version: '27.0.0.0'
                 }
             ],
-            "screenshots": [],
-            "platform": "22.0.0.0",
-            "application": "22.0.0.0",
-            "idRanges": [
+            screenshots: [],
+            platform: '27.0.0.0',
+            application: '27.0.0.0',
+            idRanges: [
                 {
-                    "from": 50100,
-                    "to": 50149
+                    from: 50100,
+                    to: 50149
                 }
             ],
-            "resourceExposurePolicy": {
-                "allowDebugging": true,
-                "allowDownloadingSource": true,
-                "includeSourceInSymbolFile": true
+            resourceExposurePolicy: {
+                allowDebugging: true,
+                allowDownloadingSource: true,
+                includeSourceInSymbolFile: true
             },
-            "runtime": "11.0",
-            "features": [
-                "NoImplicitWith"
+            runtime: '11.0',
+            features: [
+                'NoImplicitWith'
             ],
-            "target": "Cloud",
-            "test": true
+            target: 'Cloud',
+            test: true
         };
 
+        // JSON.stringify will convert it back to valid JSON with double quotes
         const content = JSON.stringify(testAppJson, null, 2);
         const appJsonPath = vscode.Uri.file(path.join(testAppRoot.fsPath, 'app.json'));
         
@@ -194,37 +196,37 @@ export class TestAppSetupService {
      */
     private async createLaunchJson(testAppRoot: vscode.Uri): Promise<void> {
         const launchJson = {
-            "version": "0.2.0",
-            "configurations": [
+            version: '0.2.0',
+            configurations: [
                 {
-                    "name": "Run Tests: Your own server",
-                    "type": "al",
-                    "request": "launch",
-                    "server": "https://yourbcserver",
-                    "serverInstance": "BC",
-                    "authentication": "Windows",
-                    "startupObjectType": "TestSuite",
-                    "startupObjectId": 50100,
-                    "breakOnError": "All",
-                    "breakOnRecordWrite": false,
-                    "launchBrowser": false,
-                    "enableLongRunningSqlStatements": true,
-                    "enableSqlInformationDebugger": true,
-                    "tenant": "default"
+                    name: 'Run Tests: Your own server',
+                    type: 'al',
+                    request: 'launch',
+                    server: 'https://yourbcserver',
+                    serverInstance: 'BC',
+                    authentication: 'Windows',
+                    startupObjectType: 'TestSuite',
+                    startupObjectId: 50100,
+                    breakOnError: 'All',
+                    breakOnRecordWrite: false,
+                    launchBrowser: false,
+                    enableLongRunningSqlStatements: true,
+                    enableSqlInformationDebugger: true,
+                    tenant: 'default'
                 },
                 {
-                    "name": "Run Tests: BC SaaS",
-                    "type": "al",
-                    "request": "launch",
-                    "environmentType": "Sandbox",
-                    "environmentName": "YourSandboxName",
-                    "startupObjectType": "TestSuite",
-                    "startupObjectId": 50100,
-                    "breakOnError": "All",
-                    "breakOnRecordWrite": false,
-                    "launchBrowser": false,
-                    "enableLongRunningSqlStatements": true,
-                    "enableSqlInformationDebugger": true
+                    name: 'Run Tests: BC SaaS',
+                    type: 'al',
+                    request: 'launch',
+                    environmentType: 'Sandbox',
+                    environmentName: 'YourSandboxName',
+                    startupObjectType: 'TestSuite',
+                    startupObjectId: 50100,
+                    breakOnError: 'All',
+                    breakOnRecordWrite: false,
+                    launchBrowser: false,
+                    enableLongRunningSqlStatements: true,
+                    enableSqlInformationDebugger: true
                 }
             ]
         };

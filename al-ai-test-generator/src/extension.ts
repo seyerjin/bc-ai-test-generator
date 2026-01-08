@@ -15,11 +15,11 @@ let mutationRunner: MutationTestRunner;
 let testGenerator: TestGenerator;
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('AL AI Test Generator v2.1 (with Mutation Testing) aktiviert');
+    console.log('AL AI Test Generator aktiviert');
     
     outputChannel = vscode.window.createOutputChannel('AL AI Test Generator');
     outputChannel.appendLine('==============================================');
-    outputChannel.appendLine('AL AI Test Generator v2.1 ACTIVATED');
+    outputChannel.appendLine('AL AI Test Generator ACTIVATED');
     outputChannel.appendLine('==============================================');
     outputChannel.appendLine('Extension aktiviert mit Mutation Testing Support');
     outputChannel.appendLine('Commands verfügbar:');
@@ -122,7 +122,7 @@ async function generateTestsCommand(uri?: vscode.Uri) {
                 if (selection === 'Datei öffnen') {
                     vscode.workspace.openTextDocument(testFile).then(doc => {
                         vscode.window.showTextDocument(doc);
-                    }, error => {
+                    }, _error => { // KORREKTUR: error zu _error umbenannt (unused variable)
                         outputChannel.appendLine('⚠️  Test-Datei konnte nicht geöffnet werden');
                     });
                 } else if (selection === 'Test-Ordner öffnen') {
@@ -135,7 +135,7 @@ async function generateTestsCommand(uri?: vscode.Uri) {
             vscode.window.showWarningMessage('Test-Generierung wurde abgebrochen oder ist fehlgeschlagen');
         }
         
-    } catch (error: any) {
+    } catch (error) { // KORREKTUR: ': any' entfernt
         const errorMsg = error instanceof Error ? error.message : String(error);
         outputChannel.appendLine(`❌ Fehler: ${errorMsg}`);
         vscode.window.showErrorMessage(`Test-Generierung fehlgeschlagen: ${errorMsg}`);

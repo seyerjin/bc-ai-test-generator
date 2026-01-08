@@ -3,6 +3,14 @@ import * as vscode from 'vscode';
 import { AuthService } from './authService';
 import { ConfigService } from './configService';
 
+// Interface für die Fehlerstruktur der API
+interface ApiError {
+    status?: number;
+    code?: string;
+    message: string;
+    headers?: Record<string, string>;
+}
+
 /**
  * ClaudeService - Anthropic Claude API Integration
  * Implementiert FA3 - Claude API Integration mit Error Handling und Rate Limiting
@@ -39,8 +47,7 @@ export class ClaudeService {
     /**
      * Generate Test Code using Claude AI
      * Implements Exponential Backoff for Rate Limiting (N-FA1)
-     * 
-     * @param sourceCode - AL source code to generate tests for
+     * * @param sourceCode - AL source code to generate tests for
      * @param context - Additional context (object type, name, etc.)
      * @param token - Cancellation token
      * @returns Generated AL test code
@@ -54,7 +61,9 @@ export class ClaudeService {
             await this.initialize();
         }
 
-        if (!this.client) {
+        // Lokale Referenz für Type-Safety (vermeidet non-null assertion !)
+        const client = this.client;
+        if (!client) {
             throw new Error('Claude Client konnte nicht initialisiert werden');
         }
 
@@ -79,7 +88,7 @@ export class ClaudeService {
                 this.outputChannel.appendLine(`\nSende Anfrage an Claude AI (${ConfigService.getModel()})...`);
                 this.outputChannel.appendLine(`Max Tokens: ${ConfigService.getMaxTokens()}`);
                 
-                const response = await this.client!.messages.create({
+                const response = await client.messages.create({
                     model: ConfigService.getModel(),
                     max_tokens: ConfigService.getMaxTokens(),
                     messages: [{
@@ -117,18 +126,20 @@ export class ClaudeService {
         while (attempt < this.maxRetries) {
             try {
                 return await fn();
-            } catch (error: any) {
-                lastError = error;
+            } catch (error: unknown) {
+                // Type Assertion für Fehlerzugriff
+                const err = error as ApiError;
+                lastError = error instanceof Error ? error : new Error(String(error));
                 
                 // Check if error is retryable
                 const isRetryable = this.isRetryableError(error);
                 
                 if (!isRetryable || attempt >= this.maxRetries - 1) {
-                    throw error;
+                    throw lastError;
                 }
 
                 // Calculate delay with exponential backoff
-                const retryAfter = error.headers?.['retry-after'];
+                const retryAfter = err.headers?.['retry-after'];
                 const delay = retryAfter 
                     ? parseInt(retryAfter) * 1000
                     : Math.min(
@@ -137,7 +148,7 @@ export class ClaudeService {
                     );
 
                 this.outputChannel.appendLine(
-                    `Fehler: ${error.message}. Retry in ${delay/1000}s (Versuch ${attempt + 1}/${this.maxRetries})`
+                    `Fehler: ${err.message}. Retry in ${delay/1000}s (Versuch ${attempt + 1}/${this.maxRetries})`
                 );
 
                 await this.sleep(delay);
@@ -151,19 +162,21 @@ export class ClaudeService {
     /**
      * Check if Error is Retryable
      */
-    private isRetryableError(error: any): boolean {
+    private isRetryableError(error: unknown): boolean {
+        const err = error as ApiError;
+
         // Rate Limiting
-        if (error.status === 429) {
+        if (err.status === 429) {
             return true;
         }
 
         // Server Errors (5xx)
-        if (error.status >= 500 && error.status < 600) {
+        if (err.status && err.status >= 500 && err.status < 600) {
             return true;
         }
 
         // Network Errors
-        if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+        if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
             return true;
         }
 
@@ -175,7 +188,7 @@ export class ClaudeService {
      * Context-aware prompt generation with AL-specific requirements
      */
     private buildPrompt(sourceCode: string, context: string): string {
-        const testIsolation = ConfigService.getTestIsolation();
+        // Variable 'testIsolation' entfernt (unused-var fix)
         const generateMocks = ConfigService.shouldGenerateMocks();
         const includeNegativeTests = ConfigService.shouldIncludeNegativeTests();
 
@@ -600,6 +613,7 @@ Generate the complete test codeunit now with multilingual TextConst labels:`;
             // Handle comments
             if (!inString && char === '/' && nextChar === '/') {
                 inComment = true;
+                i++; // Skip next char
                 continue;
             }
             if (inComment && char === '\n') {
@@ -651,8 +665,12 @@ Generate the complete test codeunit now with multilingual TextConst labels:`;
         try {
             await this.initialize();
             
+            if (!this.client) {
+                return false;
+            }
+
             // Make simple test request
-            const response = await this.client!.messages.create({
+            const response = await this.client.messages.create({
                 model: 'claude-sonnet-4-5-20250929',
                 max_tokens: 10,
                 messages: [{

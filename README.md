@@ -156,16 +156,6 @@ Ctrl+Shift+P → "AL: Run Mutation Tests"
 }
 ```
 
----
-
-## 📚 Documentation
-
-- [Integration Guide](INTEGRATION_GUIDE.md) - Seamless integration into existing projects
-- [Microsoft BC Test Standards](MICROSOFT_BC_TEST_STANDARDS.md) - Complete reference
-- [Mutation Testing Guide](MUTATION_TESTING_GUIDE.md) - Detailed mutation testing documentation
-- [Publishing Guide](PUBLISHING_GUIDE.md) - How to publish to marketplace
-
----
 
 ## 🎯 Key Benefits
 

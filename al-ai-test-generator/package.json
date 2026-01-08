@@ -15,12 +15,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/al-ai-test-generator"
+    "url": "https://github.com/seyerjin/al-ai-test-generator"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/al-ai-test-generator/issues"
+    "url": "https://github.com/seyerjin/al-ai-test-generator/issues"
   },
-  "homepage": "https://github.com/yourusername/al-ai-test-generator#readme",
+  "homepage": "https://github.com/seyerjin/al-ai-test-generator#readme",
   "keywords": [
     "AL",
     "Business Central",

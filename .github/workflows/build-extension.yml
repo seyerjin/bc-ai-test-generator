@@ -3,7 +3,6 @@ name: Build and Release Extension
 on:
   pull_request:
     branches: [ "main" ]
-  # NEU: Reagiert, wenn ein Review abgegeben wird
   pull_request_review:
     types: [submitted]
   workflow_dispatch:
@@ -34,8 +33,6 @@ jobs:
   quality-checks:
     runs-on: ubuntu-latest
     name: Code Quality Analysis
-    # Dieser Job läuft immer: beim Push (PR) und beim Review, 
-    # damit der nachfolgende Build-Job darauf aufbauen kann.
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,11 +67,6 @@ jobs:
     needs: [quality-checks]
     runs-on: ubuntu-latest
     name: Build Extension
-    # WICHTIG: Dieser Job läuft NUR, wenn:
-    # 1. Es ein Tag ist ODER
-    # 2. Es ein manueller Dispatch ist ODER
-    # 3. Es ein Review ist UND der Status 'approved' ist.
-    # Normale 'pull_request' Events (Pushes) werden hier ignoriert.
     if: >
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
@@ -126,7 +118,6 @@ jobs:
           echo "vsix-name=$VSIX_NAME" >> $GITHUB_OUTPUT
           echo "✅ Created: $VSIX_NAME"
 
-      # Angepasst: Bedingung auf review event erweitert
       - name: Upload VSIX Artifact (Approved PRs)
         if: github.event_name == 'pull_request_review'
         uses: actions/upload-artifact@v4
@@ -135,8 +126,7 @@ jobs:
           path: ${{ env.EXTENSION_DIR }}/*.vsix
           if-no-files-found: error
           retention-days: 14
-
-      # Angepasst: Bedingung auf review event erweitert
+          
       - name: Comment on PR with Download Link
         if: github.event_name == 'pull_request_review'
         uses: actions/github-script@v7

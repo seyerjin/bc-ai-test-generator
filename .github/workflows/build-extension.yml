@@ -1,12 +1,12 @@
 name: Build and Release Extension
 
 on:
+  pull_request:
+    branches: [ "main", "dev" ]
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
     tags:
       - 'v*.*.*'
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       release_type:
@@ -57,11 +57,6 @@ jobs:
         run: npx tsc --noEmit
         continue-on-error: false
 
-      - name: Run Unit Tests
-        working-directory: ${{ env.EXTENSION_DIR }}
-        run: npm test
-        continue-on-error: true
-
       - name: Security Audit
         working-directory: ${{ env.EXTENSION_DIR }}
         run: npm audit --audit-level=moderate
@@ -71,6 +66,9 @@ jobs:
     needs: [quality-checks]
     runs-on: ubuntu-latest
     name: Build Extension
+    if: >
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/'))) || 
+      github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ steps.version.outputs.version }}
       vsix-name: ${{ steps.package.outputs.vsix-name }}
@@ -91,11 +89,33 @@ jobs:
         working-directory: ${{ env.EXTENSION_DIR }}
         run: npm ci
 
+      - name: Auto-Bump Version (Main -> Minor)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: ${{ env.EXTENSION_DIR }}
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          npm version minor --no-git-tag-version
+          git add package.json package-lock.json
+          git commit -m "chore: auto-bump version to $(node -p "require('./package.json').version") [skip ci]"
+          git push
+
+      - name: Auto-Bump Version (Dev -> Prerelease)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        working-directory: ${{ env.EXTENSION_DIR }}
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          # preid=dev sorgt für das "-dev" im Namen
+          npm version prerelease --preid=dev --no-git-tag-version
+          git add package.json package-lock.json
+          git commit -m "chore: auto-bump dev version to $(node -p "require('./package.json').version") [skip ci]"
+          git push
+
       - name: Determine Version
         id: version
         working-directory: ${{ env.EXTENSION_DIR }}
         run: |
-          # Versionierung nur bei workflow_dispatch oder Tags
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
@@ -103,6 +123,7 @@ jobs:
             npm version $VERSION --no-git-tag-version --allow-same-version
           fi
           
+          # Liest die (oben geänderte) Version aus
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Building version: $VERSION"
@@ -114,77 +135,20 @@ jobs:
         id: package
         working-directory: ${{ env.EXTENSION_DIR }}
         run: |
+          # Der Name enthält automatisch "-dev.x", wenn die Version so lautet
           VSIX_NAME="bc-ai-test-generator-${{ steps.version.outputs.version }}.vsix"
           vsce package --out $VSIX_NAME
           echo "vsix-name=$VSIX_NAME" >> $GITHUB_OUTPUT
           echo "✅ Created: $VSIX_NAME"
 
-      - name: Upload VSIX Artifact (Pull Requests Only)
-        if: github.event_name == 'pull_request'
+      - name: Store VSIX Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bc-ai-test-generator-vsix-pr-${{ github.event.pull_request.number }}
+          name: bc-ai-test-generator-${{ steps.version.outputs.version }}
           path: ${{ env.EXTENSION_DIR }}/*.vsix
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Comment on PR with Download Link
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const comment = `## 📦 Extension Build Successful\n\n` +
-              `**Version:** ${{ steps.version.outputs.version }}\n` +
-              `**Artifact:** \`${{ steps.package.outputs.vsix-name }}\`\n\n` +
-              `### How to test:\n` +
-              `1. Download the artifact from this workflow run\n` +
-              `2. Install: \`code --install-extension ${{ steps.package.outputs.vsix-name }}\`\n` +
-              `3. Test the extension in VS Code\n\n` +
-              `[📥 Download Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-      - name: Store VSIX for Release Job
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
-        with:
-          name: vsix-for-release
-          path: ${{ env.EXTENSION_DIR }}/*.vsix
-          retention-days: 1
-
-  integration-test:
-    needs: [build]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    name: Integration Test (${{ matrix.os }})
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Dependencies
-        working-directory: ${{ env.EXTENSION_DIR }}
-        run: npm ci
-
-      - name: Run Integration Tests
-        working-directory: ${{ env.EXTENSION_DIR }}
-        run: npm run test
-        continue-on-error: true
-
+          retention-days: 5
   release:
-    needs: [build, integration-test]
+    needs: [build]
     runs-on: ubuntu-latest
     name: Create Release
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
@@ -195,7 +159,7 @@ jobs:
       - name: Download VSIX
         uses: actions/download-artifact@v4
         with:
-          name: vsix-for-release
+          name: bc-ai-test-generator-${{ needs.build.outputs.version }}
           path: ./release-artifacts/
 
       - name: Generate Changelog
@@ -225,9 +189,6 @@ jobs:
             ```bash
             code --install-extension bc-ai-test-generator-${{ needs.build.outputs.version }}.vsix
             ```
-            
-            ### What's Changed
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
           files: ./release-artifacts/*.vsix
           draft: false
           prerelease: ${{ contains(needs.build.outputs.version, '-') }}

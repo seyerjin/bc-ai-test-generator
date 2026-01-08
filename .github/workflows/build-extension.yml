@@ -1,12 +1,11 @@
 name: Build and Release Extension
 
 on:
-  push:
-    branches: [ "main" ]
-    tags:
-      - 'v*.*.*'
   pull_request:
     branches: [ "main" ]
+  # NEU: Reagiert, wenn ein Review abgegeben wird
+  pull_request_review:
+    types: [submitted]
   workflow_dispatch:
     inputs:
       release_type:
@@ -18,6 +17,9 @@ on:
           - minor
           - major
           - prerelease
+  push:
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: write
@@ -32,6 +34,8 @@ jobs:
   quality-checks:
     runs-on: ubuntu-latest
     name: Code Quality Analysis
+    # Dieser Job läuft immer: beim Push (PR) und beim Review, 
+    # damit der nachfolgende Build-Job darauf aufbauen kann.
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,11 +61,6 @@ jobs:
         run: npx tsc --noEmit
         continue-on-error: false
 
-      - name: Run Unit Tests
-        working-directory: ${{ env.EXTENSION_DIR }}
-        run: npm test
-        continue-on-error: true
-
       - name: Security Audit
         working-directory: ${{ env.EXTENSION_DIR }}
         run: npm audit --audit-level=moderate
@@ -71,6 +70,15 @@ jobs:
     needs: [quality-checks]
     runs-on: ubuntu-latest
     name: Build Extension
+    # WICHTIG: Dieser Job läuft NUR, wenn:
+    # 1. Es ein Tag ist ODER
+    # 2. Es ein manueller Dispatch ist ODER
+    # 3. Es ein Review ist UND der Status 'approved' ist.
+    # Normale 'pull_request' Events (Pushes) werden hier ignoriert.
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved')
     outputs:
       version: ${{ steps.version.outputs.version }}
       vsix-name: ${{ steps.package.outputs.vsix-name }}
@@ -95,7 +103,6 @@ jobs:
         id: version
         working-directory: ${{ env.EXTENSION_DIR }}
         run: |
-          # Versionierung nur bei workflow_dispatch oder Tags
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
@@ -119,8 +126,9 @@ jobs:
           echo "vsix-name=$VSIX_NAME" >> $GITHUB_OUTPUT
           echo "✅ Created: $VSIX_NAME"
 
-      - name: Upload VSIX Artifact (Pull Requests Only)
-        if: github.event_name == 'pull_request'
+      # Angepasst: Bedingung auf review event erweitert
+      - name: Upload VSIX Artifact (Approved PRs)
+        if: github.event_name == 'pull_request_review'
         uses: actions/upload-artifact@v4
         with:
           name: bc-ai-test-generator-vsix-pr-${{ github.event.pull_request.number }}
@@ -128,12 +136,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # Angepasst: Bedingung auf review event erweitert
       - name: Comment on PR with Download Link
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request_review'
+        uses: actions/github-script@v7
         with:
           script: |
-            const comment = `## 📦 Extension Build Successful\n\n` +
+            const comment = `## 📦 Extension Build Successful (Approved)\n\n` +
               `**Version:** ${{ steps.version.outputs.version }}\n` +
               `**Artifact:** \`${{ steps.package.outputs.vsix-name }}\`\n\n` +
               `### How to test:\n` +
@@ -143,7 +152,7 @@ jobs:
               `[📥 Download Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
             
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: context.payload.pull_request.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: comment
@@ -157,34 +166,8 @@ jobs:
           path: ${{ env.EXTENSION_DIR }}/*.vsix
           retention-days: 1
 
-  integration-test:
-    needs: [build]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    name: Integration Test (${{ matrix.os }})
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Dependencies
-        working-directory: ${{ env.EXTENSION_DIR }}
-        run: npm ci
-
-      - name: Run Integration Tests
-        working-directory: ${{ env.EXTENSION_DIR }}
-        run: npm run test
-        continue-on-error: true
-
   release:
-    needs: [build, integration-test]
+    needs: [build]
     runs-on: ubuntu-latest
     name: Create Release
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'

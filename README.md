@@ -2,11 +2,13 @@
 
 🚀 **AI-powered test generation for Microsoft Dynamics 365 Business Central AL code**
 
-Generate comprehensive, high-quality test codeunits with Claude AI, following official Microsoft test standards. Includes mutation testing framework for test quality assessment.
+Generate comprehensive, high-quality test codeunits with Claude AI, following official Microsoft test standards. Includes mutation testing framework for test quality assessment and complete CI/CD pipeline templates for AL projects.
 
-[![VS Code Marketplace](https://img.shields.io/vscode-marketplace/v/seyerjin.al-ai-test-generator.svg)](https://marketplace.visualstudio.com/items?itemName=seyerjin.al-ai-test-generator)
-[![Downloads](https://img.shields.io/vscode-marketplace/d/seyerjin.al-ai-test-generator.svg)](https://marketplace.visualstudio.com/items?itemName=seyerjin.al-ai-test-generator)
-[![Rating](https://img.shields.io/vscode-marketplace/r/seyerjin.al-ai-test-generator.svg)](https://marketplace.visualstudio.com/items?itemName=seyerjin.al-ai-test-generator)
+> **Academic Project:** This extension was developed as part of a Master's thesis in Cloud Computing at Hochschule Burgenland, exploring AI-assisted test case generation for Business Central.
+
+[![GitHub Release](https://img.shields.io/github/v/release/seyerjin/bc-ai-test-generator)](https://github.com/seyerjin/bc-ai-test-generator/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 
 ---
 
@@ -30,42 +32,92 @@ Generate comprehensive, high-quality test codeunits with Claude AI, following of
 - **Best Practices**: Follows AL naming conventions (Msg, Err, Qst, Cnf)
 - **No Manual Translation Needed**: AI generates both languages simultaneously
 
+### 🔄 CI/CD Pipeline Templates
+- **Complete GitHub Actions workflows** for AL projects
+- **Automated testing** in BC containers
+- **Code coverage analysis** with PR comments
+- **Mutation testing** for test quality gates
+- **Automated deployment** to BC environments
+
 ---
 
 ## 📦 Installation
 
-### From VS Code Marketplace
-1. Open VS Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "AL AI Test Generator"
-4. Click "Install"
+### From GitHub Releases (Recommended)
 
-### Manual Installation
+1. **Download the latest release:**
+   - Go to [Releases](https://github.com/seyerjin/bc-ai-test-generator/releases)
+   - Download the `.vsix` file from the latest release
+
+2. **Install in VS Code:**
+   ```bash
+   code --install-extension bc-ai-test-generator-X.X.X.vsix
+   ```
+
+   Or via VS Code UI:
+   - Open VS Code
+   - Go to Extensions (Ctrl+Shift+X)
+   - Click the "..." menu → "Install from VSIX..."
+   - Select the downloaded `.vsix` file
+
+### Build from Source
+
 ```bash
-code --install-extension al-ai-test-generator-2.0.0.vsix
+# Clone the repository
+git clone https://github.com/seyerjin/bc-ai-test-generator.git
+cd bc-ai-test-generator/al-ai-test-generator
+
+# Install dependencies
+npm install
+
+# Build and package
+npm run package
+
+# Install the extension
+code --install-extension bc-ai-test-generator-X.X.X.vsix
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Set API Key
+### Extension Setup
+
+#### 1. Set API Key
 ```
 Ctrl+Shift+P → "AL: Set Anthropic API Key"
 ```
 Get your API key from: https://console.anthropic.com
 
-### 2. Generate Tests
+#### 2. Generate Tests
 - **Right-click** on any AL file → **"AL: Generate Tests with AI"**
 - Or: `Ctrl+Shift+P` → "AL: Generate Tests"
 
-### 3. Review Generated Tests
+#### 3. Review Generated Tests
 Tests are created in `Test/` folder with:
 - ✅ Library - Assert usage
 - ✅ Given-When-Then structure
 - ✅ TestPage for UI testing
 - ✅ Handler functions
 - ✅ Multilingual TextConst labels (DEU/ENU)
+
+### CI/CD Pipeline Setup
+
+Want to automate testing in your AL project?
+
+**→ [Complete CI/CD Setup Guide](templates/README.md)** (20 pages)
+
+Quick integration:
+```bash
+# Copy templates to your AL project
+cp templates/workflows/al-pipeline.yml .github/workflows/ci-cd.yml
+cp -r templates/mutation-testing/ .github/
+
+# Install dependencies
+cd .github/mutation-testing && npm install
+
+# Pipeline runs automatically on Pull Requests!
+```
 
 ---
 
@@ -141,6 +193,8 @@ Ctrl+Shift+P → "AL: Run Mutation Tests"
 
 ## ⚙️ Configuration
 
+### Extension Settings
+
 ```json
 {
   "alTestGenerator.model": "claude-sonnet-4-5-20250929",
@@ -156,6 +210,14 @@ Ctrl+Shift+P → "AL: Run Mutation Tests"
 }
 ```
 
+### CI/CD Pipeline Configuration
+
+See [templates/README.md](templates/README.md) for complete setup guide including:
+- Code coverage thresholds
+- Mutation testing settings
+- Deployment configuration
+
+---
 
 ## 🎯 Key Benefits
 
@@ -164,36 +226,66 @@ Ctrl+Shift+P → "AL: Run Mutation Tests"
 - 🎓 **Learn Best Practices**: AI follows Microsoft standards
 - 🌍 **Multilingual Ready**: Automatic DEU/ENU labels
 - 🔍 **Quality Assurance**: Mutation testing validates test effectiveness
+- 🔄 **CI/CD Ready**: Production-ready pipeline templates included
 
 ### For Teams
 - 📈 **Consistent Quality**: All tests follow same standards
 - 🤝 **Easy Onboarding**: New developers learn from generated tests
-- 🔄 **CI/CD Integration**: AL-Go compatible workflows
-- 📊 **Metrics**: Mutation scores track test quality
+- 🔄 **CI/CD Integration**: Complete GitHub Actions workflows
+- 📊 **Metrics**: Mutation scores and coverage track test quality
+- 🚀 **Automated Deployment**: Push to main, deploy automatically
+
+### For Researchers
+- 📊 **Data Collection**: Automated metrics for empirical studies
+- 🔬 **Reproducibility**: Complete CI/CD ensures consistent results
+- 📈 **Trend Analysis**: Historical data for quality evolution
+- 🎓 **Academic Use**: Designed for software testing research
 
 ---
 
 ## 🔧 Requirements
 
+### Extension Requirements
 - Visual Studio Code 1.80.0 or higher
 - AL Language Extension
-- Anthropic API Key (get free credits at https://console.anthropic.com)
+- Anthropic API Key (https://console.anthropic.com)
 - Business Central AL Project
 
----
-
-## 📄 License
-
-MIT License - See [LICENSE](LICENSE) for details
-
----
-
-## 📞 Support
-
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yourusername/al-ai-test-generator/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/yourusername/al-ai-test-generator/discussions)
-- 📧 **Email**: your.email@example.com
+### CI/CD Pipeline Requirements
+- GitHub Repository with Actions enabled
+- Business Central License file
+- Node.js 18+ (for mutation testing)
+- AL-Go framework (included in template)
 
 ---
 
-**Made with ❤️ for the Business Central Community**
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [README.md](README.md) | This file - Overview and quick start |
+| [templates/README.md](templates/README.md) | **20-page CI/CD setup guide** |
+| [templates/example-al-project/](templates/example-al-project/) | Complete working example |
+| [CHANGELOG.md](CHANGELOG.md) | Version history and changes |
+
+---
+
+## 🏗️ Repository Structure
+
+```
+bc-ai-test-generator/
+├── .github/workflows/
+│   └── build-extension.yml       # Extension build & release pipeline
+├── al-ai-test-generator/         # VS Code extension source
+│   ├── src/                      # TypeScript source code
+│   ├── package.json
+│   └── README.md
+├── templates/                     # CI/CD templates for AL projects
+│   ├── workflows/
+│   │   └── al-pipeline.yml       # Complete CI/CD pipeline (800+ lines)
+│   ├── mutation-testing/         # Mutation testing scripts
+│   ├── example-al-project/       # Working example
+│   └── README.md                 # Complete setup guide
+├── README.md                      # This file
+└── LICENSE
+```

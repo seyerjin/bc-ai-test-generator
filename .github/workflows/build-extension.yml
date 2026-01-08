@@ -2,9 +2,9 @@ name: Build and Release Extension
 
 on:
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev" ] # Auch PRs auf Dev prüfen
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev" ] # Auch Pushes auf Dev bauen
     tags:
       - 'v*.*.*'
   workflow_dispatch:
@@ -66,6 +66,7 @@ jobs:
     needs: [quality-checks]
     runs-on: ubuntu-latest
     name: Build Extension
+    # Build läuft bei Push auf Main ODER Dev ODER Tags ODER Manuell
     if: >
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/'))) || 
       github.event_name == 'workflow_dispatch'
@@ -89,6 +90,7 @@ jobs:
         working-directory: ${{ env.EXTENSION_DIR }}
         run: npm ci
 
+      # --- LOGIK FÜR MAIN BRANCH (Minor Update) ---
       - name: Auto-Bump Version (Main -> Minor)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: ${{ env.EXTENSION_DIR }}
@@ -100,6 +102,8 @@ jobs:
           git commit -m "chore: auto-bump version to $(node -p "require('./package.json').version") [skip ci]"
           git push
 
+      # --- LOGIK FÜR DEV BRANCH (Prerelease Update) ---
+      # Erzeugt Versionen wie 2.3.1-dev.0
       - name: Auto-Bump Version (Dev -> Prerelease)
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         working-directory: ${{ env.EXTENSION_DIR }}
@@ -144,9 +148,13 @@ jobs:
       - name: Store VSIX Artifact
         uses: actions/upload-artifact@v4
         with:
+          # Artefakt heißt z.B.: bc-ai-test-generator-2.4.0-dev.1
           name: bc-ai-test-generator-${{ steps.version.outputs.version }}
           path: ${{ env.EXTENSION_DIR }}/*.vsix
           retention-days: 5
+
+  # Release Job bleibt unverändert und läuft NUR bei Tags oder manuellem Start
+  # (Dev-Builds landen also nicht in den GitHub Releases, sondern nur als Artifacts)
   release:
     needs: [build]
     runs-on: ubuntu-latest

@@ -3,10 +3,14 @@ name: Build and Release Extension
 on:
   pull_request:
     branches: [ "main", "dev" ]
+    paths:
+      - 'al-ai-test-generator/**'
   push:
     branches: [ "main", "dev" ]
     tags:
       - 'v*.*.*'
+    paths:
+      - 'al-ai-test-generator/**'
   workflow_dispatch:
     inputs:
       release_type:

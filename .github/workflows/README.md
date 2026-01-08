@@ -24,19 +24,6 @@ Diese Workflows implementieren eine vollständige CI/CD Pipeline mit AL-Go Integ
 9. **deploy** - Marketplace Deployment (main only)
 10. **update-al-go** - AL-Go Updates (manual)
 
-## 🔧 Setup
-
-### Secrets konfigurieren
-
-Für Deployment zum Marketplace:
-
-```bash
-# In Repository Settings → Secrets and variables → Actions
-VSCE_PAT = <your-marketplace-token>
-```
-
-Token erstellen: https://marketplace.visualstudio.com/manage
-
 ## 📊 Pipeline-Übersicht
 
 ```

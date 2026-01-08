@@ -27,7 +27,7 @@ jobs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Initialize the workflow
         id: init
@@ -44,7 +44,7 @@ jobs:
       TestAppsArtifactsName: ${{ steps.calculateArtifactNames.outputs.TestAppsArtifactsName }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Read settings
         id: ReadSettings
@@ -76,7 +76,7 @@ jobs:
           secretsJson: ${{ env.RepoSecrets }}
 
       - name: Publish artifacts - Apps
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.calculateArtifactNames.outputs.AppsArtifactsName }}
           path: |
@@ -85,7 +85,7 @@ jobs:
           retention-days: 30
 
       - name: Publish artifacts - Test Apps
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.calculateArtifactNames.outputs.TestAppsArtifactsName }}
           path: |
@@ -99,7 +99,7 @@ jobs:
     name: Run Tests
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Read settings
         uses: microsoft/AL-Go-Actions/ReadSettings@v4.0
@@ -114,13 +114,13 @@ jobs:
           secrets: 'licenseFileUrl,insiderSasToken'
 
       - name: Download App Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Build.outputs.AppsArtifactsName }}
           path: .artifacts/apps
 
       - name: Download Test App Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Build.outputs.TestAppsArtifactsName }}
           path: .artifacts/testapps
@@ -133,7 +133,7 @@ jobs:
           secretsJson: ${{ env.RepoSecrets }}
 
       - name: Publish Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: TestResults
@@ -148,22 +148,22 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download App Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Build.outputs.AppsArtifactsName }}
           path: .artifacts/apps
 
       - name: Download Test App Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Build.outputs.TestAppsArtifactsName }}
           path: .artifacts/testapps
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -178,7 +178,7 @@ jobs:
           MUTATION_CONFIG: ${{ github.workspace }}/mutation.config.json
 
       - name: Upload Mutation Test Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@4
         if: always()
         with:
           name: MutationTestReport
@@ -224,7 +224,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Read settings
         uses: microsoft/AL-Go-Actions/ReadSettings@v4.0
@@ -239,7 +239,7 @@ jobs:
           secrets: 'StorageContext'
 
       - name: Download App Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Build.outputs.AppsArtifactsName }}
           path: .artifacts/apps
@@ -259,7 +259,7 @@ jobs:
     needs: [ Initialization, Build, Test ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Finalize the workflow
         id: PostProcess

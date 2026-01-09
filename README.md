@@ -68,7 +68,7 @@ Tests are created in `Test/` folder with:
 
 Want to automate testing in your AL project?
 
-**→ [Complete CI/CD Setup Guide](templates/README.md)** (20 pages)
+**→ [Complete CI/CD Setup Guide](templates/README.md)** 
 
 Quick integration:
 ```bash
@@ -195,17 +195,6 @@ See [templates/README.md](templates/README.md) for complete setup guide includin
 - Business Central License file
 - Node.js 18+ (for mutation testing)
 - AL-Go framework (included in template)
-
----
-
-## 📚 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [README.md](README.md) | This file - Overview and quick start |
-| [templates/README.md](templates/README.md) | **20-page CI/CD setup guide** |
-| [templates/example-al-project/](templates/example-al-project/) | Complete working example |
-| [CHANGELOG.md](CHANGELOG.md) | Version history and changes |
 
 ---
 

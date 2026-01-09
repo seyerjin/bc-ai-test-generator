@@ -8,14 +8,12 @@ This guide explains how to integrate the CI/CD pipeline template into your Busin
 ## 📋 Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Quick Start (5 minutes)](#quick-start)
+2. [Quick Start](#quick-start)
 3. [Detailed Setup Instructions](#detailed-setup-instructions)
 4. [Configuration](#configuration)
 5. [GitHub Secrets Setup](#github-secrets-setup)
 6. [Testing the Pipeline](#testing-the-pipeline)
 7. [Understanding the Pipeline](#understanding-the-pipeline)
-8. [Troubleshooting](#troubleshooting)
-9. [Advanced Configuration](#advanced-configuration)
 
 ---
 
@@ -304,103 +302,6 @@ The pipeline produces these downloadable artifacts:
 
 ---
 
-## Advanced Configuration
-
-### Custom Mutation Operators
-
-Edit `.github/mutation-testing/run-mutation-tests.js`:
-
-```javascript
-const MUTATION_OPERATORS = {
-  AOR: { enabled: true },   // Arithmetic operators
-  ROR: { enabled: true },   // Relational operators
-  LCR: { enabled: false },  // Logical connectors (disable if too slow)
-  SDL: { enabled: true },   // Statement deletion
-  RVR: { enabled: true },   // Return values
-  BVR: { enabled: false }   // Boundary values (disable if too slow)
-};
-```
-
-### Conditional Deployment
-
-Deploy to different environments based on branch:
-
-```yaml
-Deploy:
-  if: |
-    (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-    (github.ref == 'refs/heads/develop' && github.event_name == 'push')
-  steps:
-    - name: Deploy
-      with:
-        environmentName: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }}
-```
-
-### Matrix Testing
-
-Test on multiple BC versions:
-
-```yaml
-Test:
-  strategy:
-    matrix:
-      bc-version: ['21.0', '22.0', '23.0']
-  steps:
-    - name: Run Tests
-      with:
-        bcVersion: ${{ matrix.bc-version }}
-```
-
-### Custom Coverage Thresholds per Branch
-
-```yaml
-- name: Validate Coverage
-  run: |
-    $threshold = if ($env:GITHUB_REF -eq 'refs/heads/main') { 80 } else { 70 }
-    if ($coverage -lt $threshold) {
-      throw "Coverage below threshold"
-    }
-```
-
----
-
-## Performance Optimization
-
-### Speed Up Build Time
-
-1. **Use Caching:**
-
-```yaml
-- name: Cache AL Packages
-  uses: actions/cache@v3
-  with:
-    path: .alpackages
-    key: ${{ runner.os }}-alpackages-${{ hashFiles('app.json') }}
-```
-
-2. **Parallel Jobs:**
-
-```yaml
-Test:
-  strategy:
-    matrix:
-      shard: [1, 2, 3, 4]
-  steps:
-    - name: Run Tests (Shard ${{ matrix.shard }}/4)
-```
-
-3. **Skip Unnecessary Jobs:**
-
-```yaml
-on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-```
-
----
-
 ## Data Analysis
 
 ### Exporting Metrics for Research
@@ -421,79 +322,5 @@ cat coverage/summary.json | jq '.lineCoverage'
 # Download mutation data
 gh run download <run-id> --name MutationTestReport
 
-# Analyze with jq
-cat mutation-report/summary.json | jq '.mutationScore'
-```
-
-### R Analysis Example
-
-```r
-library(jsonlite)
-library(ggplot2)
-
-# Load data
-coverage <- fromJSON("coverage/summary.json")
-mutation <- fromJSON("mutation-report/summary.json")
-
-# Create dataframe
-metrics <- data.frame(
-  coverage = coverage$lineCoverage,
-  mutation_score = mutation$mutationScore
-)
-
-# Plot
-ggplot(metrics, aes(x = coverage, y = mutation_score)) +
-  geom_point() +
-  labs(title = "Coverage vs Mutation Score",
-       x = "Line Coverage (%)",
-       y = "Mutation Score (%)")
-```
-
----
-
-## Support
-
-### Getting Help
-
-- **Template Issues:** https://github.com/seyerjin/bc-ai-test-generator/issues
-- **AL-Go Documentation:** https://github.com/microsoft/AL-Go
-- **BC Testing Guide:** https://learn.microsoft.com/dynamics365/business-central/dev-itpro/developer/devenv-testing-application
-
-### Community
-
-- **BC Community:** https://community.dynamics.com/business
-- **AL Language:** https://github.com/microsoft/AL
-
----
-
-## Checklist
-
-Use this checklist to verify your setup:
-
-- [ ] Copied `al-pipeline.yml` to `.github/workflows/ci-cd.yml`
-- [ ] Copied mutation testing files to `.github/mutation-testing/`
-- [ ] Ran `npm install` in `.github/mutation-testing/`
-- [ ] Configured `LICENSEFILE_URL` secret
-- [ ] Configured other required secrets
-- [ ] Customized project name in pipeline
-- [ ] Created `.AL-Go/settings.json`
-- [ ] Committed all files to repository
-- [ ] Pushed to GitHub
-- [ ] Created test Pull Request
-- [ ] Verified pipeline runs successfully
-- [ ] Reviewed PR comments (coverage, mutation score)
-- [ ] Downloaded and inspected artifacts
-
----
-
-**Setup Complete!** 🎉
-
-Your AL project now has a fully automated CI/CD pipeline with:
-- ✅ Automated builds
-- ✅ Test execution
-- ✅ Code coverage analysis
-- ✅ Mutation testing
-- ✅ Automated deployment
-- ✅ PR quality gates
 
 **Happy Testing!** 🚀

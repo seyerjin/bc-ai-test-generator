@@ -11,9 +11,8 @@ This guide explains how to integrate the CI/CD pipeline template into your Busin
 2. [Quick Start](#quick-start)
 3. [Detailed Setup Instructions](#detailed-setup-instructions)
 4. [Configuration](#configuration)
-5. [GitHub Secrets Setup](#github-secrets-setup)
-6. [Testing the Pipeline](#testing-the-pipeline)
-7. [Understanding the Pipeline](#understanding-the-pipeline)
+5. [Testing the Pipeline](#testing-the-pipeline)
+6. [Understanding the Pipeline](#understanding-the-pipeline)
 ---
 
 ## Prerequisites

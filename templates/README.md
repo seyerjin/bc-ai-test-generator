@@ -8,7 +8,7 @@ This guide explains how to integrate the CI/CD pipeline template into your Busin
 ## 📋 Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Quick Start (5 minutes)](#quick-start)
+2. [Quick Start](#quick-start)
 3. [Detailed Setup Instructions](#detailed-setup-instructions)
 4. [Configuration](#configuration)
 5. [GitHub Secrets Setup](#github-secrets-setup)

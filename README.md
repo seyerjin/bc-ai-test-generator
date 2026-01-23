@@ -1,12 +1,6 @@
 # AL AI Test Generator with Mutation Testing
 
-🚀 **AI-powered test generation for Microsoft Dynamics 365 Business Central AL code**
-
-Generate comprehensive, high-quality test codeunits with Claude AI, following official Microsoft test standards. Includes mutation testing framework for test quality assessment and complete CI/CD pipeline templates for AL projects.
-
-## 📦 Installation
-
-### From GitHub Releases (Recommended)
+## From GitHub Releases (Recommended)
 
 1. **Download the latest release:**
    - Go to [Releases](https://github.com/seyerjin/bc-ai-test-generator/releases)
@@ -23,7 +17,7 @@ Generate comprehensive, high-quality test codeunits with Claude AI, following of
    - Click the "..." menu → "Install from VSIX..."
    - Select the downloaded `.vsix` file
 
-### Build from Source
+## Build from Source
 
 ```bash
 # Clone the repository
@@ -42,21 +36,20 @@ code --install-extension bc-ai-test-generator-X.X.X.vsix
 
 ---
 
-## 🚀 Quick Start
 
-### Extension Setup
+## Extension Setup
 
-#### 1. Set API Key
+### 1. Set API Key
 ```
 Ctrl+Shift+P → "AL: Set Anthropic API Key"
 ```
 Get your API key from: https://console.anthropic.com
 
-#### 2. Generate Tests
+### 2. Generate Tests
 - **Right-click** on any AL file → **"AL: Generate Tests with AI"**
 - Or: `Ctrl+Shift+P` → "AL: Generate Tests"
 
-#### 3. Review Generated Tests
+### 3. Review Generated Tests
 Tests are created in `Test/` folder with:
 - ✅ Library - Assert usage
 - ✅ Given-When-Then structure
@@ -64,11 +57,11 @@ Tests are created in `Test/` folder with:
 - ✅ Handler functions
 - ✅ Multilingual TextConst labels (DEU/ENU)
 
-### CI/CD Pipeline Setup
+## CI/CD Pipeline Setup
 
 Want to automate testing in your AL project?
 
-**→ [Complete CI/CD Setup Guide](templates/README.md)** (20 pages)
+**→ [Complete CI/CD Setup Guide](templates/README.md)**
 
 Quick integration:
 ```bash
@@ -195,17 +188,6 @@ See [templates/README.md](templates/README.md) for complete setup guide includin
 - Business Central License file
 - Node.js 18+ (for mutation testing)
 - AL-Go framework (included in template)
-
----
-
-## 📚 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [README.md](README.md) | This file - Overview and quick start |
-| [templates/README.md](templates/README.md) | **20-page CI/CD setup guide** |
-| [templates/example-al-project/](templates/example-al-project/) | Complete working example |
-| [CHANGELOG.md](CHANGELOG.md) | Version history and changes |
 
 ---
 

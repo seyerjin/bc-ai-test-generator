@@ -14,9 +14,6 @@ This guide explains how to integrate the CI/CD pipeline template into your Busin
 5. [GitHub Secrets Setup](#github-secrets-setup)
 6. [Testing the Pipeline](#testing-the-pipeline)
 7. [Understanding the Pipeline](#understanding-the-pipeline)
-8. [Troubleshooting](#troubleshooting)
-9. [Advanced Configuration](#advanced-configuration)
-
 ---
 
 ## Prerequisites
@@ -450,50 +447,5 @@ ggplot(metrics, aes(x = coverage, y = mutation_score)) +
 ```
 
 ---
-
-## Support
-
-### Getting Help
-
-- **Template Issues:** https://github.com/seyerjin/bc-ai-test-generator/issues
-- **AL-Go Documentation:** https://github.com/microsoft/AL-Go
-- **BC Testing Guide:** https://learn.microsoft.com/dynamics365/business-central/dev-itpro/developer/devenv-testing-application
-
-### Community
-
-- **BC Community:** https://community.dynamics.com/business
-- **AL Language:** https://github.com/microsoft/AL
-
----
-
-## Checklist
-
-Use this checklist to verify your setup:
-
-- [ ] Copied `al-pipeline.yml` to `.github/workflows/ci-cd.yml`
-- [ ] Copied mutation testing files to `.github/mutation-testing/`
-- [ ] Ran `npm install` in `.github/mutation-testing/`
-- [ ] Configured `LICENSEFILE_URL` secret
-- [ ] Configured other required secrets
-- [ ] Customized project name in pipeline
-- [ ] Created `.AL-Go/settings.json`
-- [ ] Committed all files to repository
-- [ ] Pushed to GitHub
-- [ ] Created test Pull Request
-- [ ] Verified pipeline runs successfully
-- [ ] Reviewed PR comments (coverage, mutation score)
-- [ ] Downloaded and inspected artifacts
-
----
-
-**Setup Complete!** 🎉
-
-Your AL project now has a fully automated CI/CD pipeline with:
-- ✅ Automated builds
-- ✅ Test execution
-- ✅ Code coverage analysis
-- ✅ Mutation testing
-- ✅ Automated deployment
-- ✅ PR quality gates
 
 **Happy Testing!** 🚀

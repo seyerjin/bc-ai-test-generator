@@ -451,7 +451,6 @@ codeunit 50100 "Customer Validation Test"
             exit;
         
         IsInitialized := true;
-        Commit();
     end;
 
     local procedure CreateTestCustomer(var Cust: Record Customer)
@@ -533,7 +532,6 @@ begin
     
     // One-time setup
     IsInitialized := true;
-    Commit();
 end;
 \`\`\`
 

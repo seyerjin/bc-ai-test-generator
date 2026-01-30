@@ -2,7 +2,7 @@
   "name": "al-ai-test-generator",
   "displayName": "AL AI Test Generator with Mutation Testing",
   "description": "AI-powered test generation for Microsoft Dynamics 365 Business Central AL code with mutation testing framework. Follows official Microsoft test standards.",
-  "version": "2.4.1-dev.1",
+  "version": "2.4.1-dev.2",
   "publisher": "seyerjin",
   "author": {
     "name": "Your Name",

@@ -113,8 +113,8 @@
       "properties": {
         "alTestGenerator.model": {
           "type": "string",
-          "default": "claude-sonnet-4-5-20250929",
-          "description": "Claude model to use for test generation (Sonnet 4.5 - latest)"
+          "default": "claude-sonnet-4-6",
+          "description": "Claude model to use for test generation (claude-sonnet-4-6 recommended)"
         },
         "alTestGenerator.mutation.enabledOperators": {
           "type": "array",
